@@ -1,0 +1,55 @@
+{
+  "projects": [
+    {
+      "id": "meridian",
+      "title": "Meridian",
+      "eyebrow": "(01) - Selected Work",
+      "year": "2026",
+      "project": "Identity & Launch Film",
+      "discipline": "Brand Identity",
+      "slug": "meridian",
+      "client": "Meridian",
+      "spec": "Launch film, identity system, social cutdowns",
+      "deliverables": "Hero film, grade, titles, 9:16 edits",
+      "story": "A cinematic launch piece cut around pace, texture, and retention.",
+      "image": "/assets/local/4601a11d09b90d89.png",
+      "video": "/assets/local/057b521bfa7a87a6.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:35:00Z"
+    },
+    {
+      "id": "citadel",
+      "title": "Citadel",
+      "eyebrow": "(02) - Selected Work",
+      "year": "2026",
+      "project": "Nomad Stays Campaign",
+      "discipline": "Brand Film",
+      "slug": "citadel",
+      "client": "Citadel",
+      "spec": "Campaign film and short-form edits",
+      "deliverables": "Film edit, color, trailers, social versions",
+      "story": "A travel campaign shaped with warm pacing and premium hospitality rhythm.",
+      "image": "/assets/local/58f52e871b116650.png",
+      "video": "/assets/local/cdb2b873684714da.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:35:00Z"
+    },
+    {
+      "id": "karama",
+      "title": "Karama",
+      "eyebrow": "(03) - Selected Work",
+      "year": "2025",
+      "project": "Lumen Field Titles",
+      "discipline": "Title Sequence",
+      "slug": "karama",
+      "client": "Karama",
+      "spec": "Opening titles and visual language",
+      "deliverables": "Title edit, motion, color treatment",
+      "story": "A title sequence built around atmosphere, type, and restrained movement.",
+      "image": "/assets/local/37c9996b9ff8b2db.png",
+      "video": "/assets/local/bb0cfad2c76e09a8.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:35:00Z"
+    }
+  ]
+}

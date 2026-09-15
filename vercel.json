@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/(login|admin|logout|api/projects|admin/projects/delete|admin/projects|work|work/.*)",
+      "dest": "/api/app.js"
+    },
+    {
+      "handle": "filesystem"
+    }
+  ]
+}
