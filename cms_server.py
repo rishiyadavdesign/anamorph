@@ -468,7 +468,7 @@ def admin_html():
         </div>""")
     reel_edit_forms = "".join(f"<details><summary>Edit {escape(r.get('title'))}</summary>{reel_form(r)}</details>" for r in data.get("reels", []))
     body = f"""
-    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/work">View Work</a><a class="pill" href="/reels">View Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
+    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
     <main class="wrap admin-grid">
       <section>
         <div class="eyebrow">(CMS) - Local Content</div>
@@ -476,7 +476,8 @@ def admin_html():
         <p>All images, videos, and project records are stored locally. Uploads are written into the workspace and served by this CMS server.</p>
         <div class="list">{''.join(items) or '<p>No projects yet.</p>'}</div>
         <div style="margin-top:24px">{edit_forms}</div>
-        <div class="section-head"><div><div class="eyebrow">(CMS) - Reels</div><h2>Reels</h2></div></div>
+        <div class="section-head"><div><div class="eyebrow">(CMS) - Home Reels</div><h2>Homepage Videos</h2></div></div>
+        <p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p>
         <div class="list">{''.join(reel_items) or '<p>No reels yet.</p>'}</div>
         <div style="margin-top:24px">{reel_edit_forms}</div>
       </section>
@@ -485,8 +486,8 @@ def admin_html():
         <h2>Project</h2>
         {project_form()}
         <div style="height:30px"></div>
-        <div class="eyebrow">(Upload) - New Reel</div>
-        <h2>Reel</h2>
+        <div class="eyebrow">(Upload) - Home Reel Video</div>
+        <h2>Reel Slot</h2>
         {reel_form()}
       </aside>
     </main>"""
