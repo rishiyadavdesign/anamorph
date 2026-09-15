@@ -50,6 +50,23 @@
       "video": "/assets/local/bb0cfad2c76e09a8.mp4",
       "published": true,
       "created_at": "2026-08-26T12:35:00Z"
+    },
+    {
+      "id": "flora",
+      "title": "Flora",
+      "eyebrow": "(04) - Selected Work",
+      "year": "2025",
+      "project": "Signal Product Reveal",
+      "discipline": "Product Film",
+      "slug": "flora",
+      "client": "Flora",
+      "spec": "C4D Resolve 4K 30p",
+      "deliverables": "Product reveal, motion pass, color treatment",
+      "story": "A clean product reveal built around signal, surface detail, and measured movement.",
+      "image": "/assets/local/ae4c00e8f616e0e1.png",
+      "video": "/assets/local/3760913a354ff1d7.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:34:00Z"
     }
   ]
 }
