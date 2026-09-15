@@ -68,5 +68,43 @@
       "published": true,
       "created_at": "2026-08-26T12:34:00Z"
     }
+  ],
+  "reels": [
+    {
+      "id": "reel-retention-cut",
+      "title": "Retention Cut",
+      "slug": "retention-cut",
+      "duration": "00:15",
+      "format": "9:16 Reel",
+      "caption": "A fast social cut shaped around hook, hold, and final beat.",
+      "image": "/assets/local/323795fc9c20f1ac.png",
+      "video": "/assets/local/53562e885d01eb7a.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:33:00Z"
+    },
+    {
+      "id": "reel-motion-titles",
+      "title": "Motion Titles",
+      "slug": "motion-titles",
+      "duration": "00:12",
+      "format": "Title Reel",
+      "caption": "Typography, pacing, and clean transitions for campaign launch.",
+      "image": "/assets/local/806b2b1f3bbf0a92.png",
+      "video": "/assets/local/46538c52c58812d2.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:32:00Z"
+    },
+    {
+      "id": "reel-grade-pass",
+      "title": "Grade Pass",
+      "slug": "grade-pass",
+      "duration": "00:18",
+      "format": "Color Reel",
+      "caption": "Film-grade contrast and warm accent color for premium edits.",
+      "image": "/assets/local/f828de20fc231182.png",
+      "video": "/assets/local/992e67dda5bdd73d.mp4",
+      "published": true,
+      "created_at": "2026-08-26T12:31:00Z"
+    }
   ]
 }

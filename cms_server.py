@@ -51,6 +51,7 @@ def load_cms():
     with DATA_FILE.open() as f:
         data = json.load(f)
     data.setdefault("projects", [])
+    data.setdefault("reels", [])
     return data
 
 
@@ -65,9 +66,9 @@ def slugify(value):
     return slug or "project"
 
 
-def unique_slug(data, base, current_id=None):
+def unique_slug(data, collection, base, current_id=None):
     base = slugify(base)
-    existing = {p.get("slug") for p in data["projects"] if p.get("id") != current_id}
+    existing = {p.get("slug") for p in data.get(collection, []) if p.get("id") != current_id}
     if base not in existing:
         return base
     i = 2
@@ -81,11 +82,23 @@ def public_projects():
     return sorted(projects, key=lambda p: p.get("created_at", ""), reverse=True)
 
 
+def public_reels():
+    reels = [r for r in load_cms().get("reels", []) if r.get("published", True)]
+    return sorted(reels, key=lambda r: r.get("created_at", ""), reverse=True)
+
+
 def find_project(slug):
     for project in public_projects():
         if project.get("slug") == slug:
             return project
     return None
+
+
+def next_project(projects, slug):
+    if not projects:
+        return None
+    index = next((i for i, p in enumerate(projects) if p.get("slug") == slug), -1)
+    return projects[(index + 1) % len(projects)]
 
 
 def escape(value):
@@ -156,6 +169,10 @@ def page_shell(title, body, extra_head=""):
     .opening .wrap {{ position: relative; z-index: 1; }}
     .opening-copy {{ font-size: clamp(48px, 6.45vw, 77px); line-height: 1.06; letter-spacing: -.07em; max-width: 1010px; margin: 0 0 58px; }}
     .opening-copy span {{ color: var(--muted); }}
+    .reveal-word {{ display: inline-block; animation: wordIn 1.25s cubic-bezier(.16,1,.3,1) both; }}
+    .reveal-word:nth-child(2n) {{ animation-delay: .06s; }}
+    .reveal-word:nth-child(3n) {{ animation-delay: .12s; }}
+    .reveal-muted {{ color: var(--muted); }}
     .time-grid {{ position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); pointer-events: none; color: var(--muted); font-size: 12px; }}
     .time-tick {{ border-left: 1px solid var(--line); display: grid; grid-template-rows: auto 1fr auto 1fr; padding: 24px 10px; animation: tickIn 1.4s cubic-bezier(.16,1,.3,1) both; }}
     .time-tick:nth-child(even) {{ animation-name: tickDown; }}
@@ -197,6 +214,13 @@ def page_shell(title, body, extra_head=""):
     .meta {{ display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; text-transform: uppercase; margin: 12px 0 18px; }}
     .card h3 {{ font-weight: 400; font-size: clamp(28px, 4vw, 48px); letter-spacing: -.06em; margin: 0 0 6px; }}
     .detail-media {{ width: 100%; max-height: 76vh; object-fit: cover; background: #111; display: block; }}
+    .reel-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); margin: 0 0 112px; }}
+    .reel-card {{ min-height: 560px; background: #0a0a0a; display: grid; grid-template-rows: 1fr auto; overflow: hidden; position: relative; }}
+    .reel-card video, .reel-card img {{ width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.86) contrast(1.04); transform: scale(1.01); transition: transform .8s cubic-bezier(.16,1,.3,1), filter .8s; }}
+    .reel-card:hover video, .reel-card:hover img {{ transform: scale(1.055); filter: saturate(1) contrast(1.08); }}
+    .reel-meta {{ border-top: 1px solid var(--line); padding: 14px; display: grid; grid-template-columns: 1fr auto; gap: 14px; background: #0a0a0a; }}
+    .reel-meta h3 {{ font-size: clamp(28px,4vw,52px); font-weight: 400; letter-spacing: -.07em; line-height: .92; margin: 0; }}
+    .reel-meta p {{ margin: 6px 0 0; }}
     .split {{ display: grid; grid-template-columns: 1.2fr .8fr; gap: 32px; padding: 36px 0 80px; }}
     .sheet {{ display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 42px 0 0; }}
     .sheet-item {{ min-height: 120px; border-left: 1px solid var(--line); padding: 14px; }}
@@ -227,11 +251,12 @@ def page_shell(title, body, extra_head=""):
     .login {{ min-height: 100vh; display: grid; place-items: center; padding: 24px; background: linear-gradient(180deg, rgba(10,10,10,.12), rgba(10,10,10,.85)), url('/assets/local/323795fc9c20f1ac.png') center/cover; }}
     .login .panel {{ width: min(440px, 100%); }}
     @keyframes riseIn {{ from {{ opacity: 0; transform: translateY(48px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+    @keyframes wordIn {{ from {{ opacity: .001; filter: blur(14px); transform: translateY(30px); }} to {{ opacity: 1; filter: blur(0); transform: translateY(0); }} }}
     @keyframes posterIn {{ from {{ opacity: .001; transform: scale(1.08); }} to {{ opacity: .48; transform: scale(1.04); }} }}
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy {{ grid-template-columns: 1fr; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
+    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy, .reel-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
 </head>
@@ -259,7 +284,7 @@ def work_index_html():
       <section class="opening">
         <div class="time-grid"><div class="time-tick"><span>00:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:30</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>01:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>01:30</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>02:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div></div>
         <div class="wrap">
-          <h1 class="opening-copy">Everything that left<br><span>this room cut by cut</span></h1>
+          <h1 class="opening-copy"><span class="reveal-word">Everything</span> <span class="reveal-word">that</span> <span class="reveal-word">left</span><br><span class="reveal-word reveal-muted">this</span> <span class="reveal-word reveal-muted">room</span> <span class="reveal-word reveal-muted">cut</span> <span class="reveal-word reveal-muted">by</span> <span class="reveal-word reveal-muted">cut</span></h1>
           <div class="work-count"><b>{len(projects)} Films - 2025-2026</b><span>00:02:00:00</span></div>
         </div>
       </section>
@@ -270,7 +295,37 @@ def work_index_html():
     return page_shell("Selected Work - Anamorph", body)
 
 
+def reels_html():
+    reels = public_reels()
+    cards = []
+    for index, reel in enumerate(reels, 1):
+        image = escape(reel.get("image"))
+        video = escape(reel.get("video"))
+        media = f'<video src="{video}" poster="{image}" autoplay muted loop playsinline></video>' if video else f'<img src="{image}" alt="{escape(reel.get("title"))}">'
+        cards.append(f"""
+        <article class="reel-card">
+          {media}
+          <div class="reel-meta"><div><span class="eyebrow">{index:02d} - Reel</span><h3>{escape(reel.get('title'))}</h3><p>{escape(reel.get('caption') or reel.get('format'))}</p></div><span class="eyebrow">{escape(reel.get('duration', '00:15'))}</span></div>
+        </article>""")
+    body = f"""
+    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill" href="/work">Work</a><a class="pill primary" href="/reels">Reels</a><a class="pill" href="/admin">CMS</a></nav></div></header>
+    <main>
+      <section class="opening">
+        <div class="time-grid"><div class="time-tick"><span>00:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:07</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:15</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:30</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:45</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div></div>
+        <div class="wrap">
+          <h1 class="opening-copy"><span class="reveal-word">Short-form</span> <span class="reveal-word">cuts</span><br><span class="reveal-word reveal-muted">built</span> <span class="reveal-word reveal-muted">to</span> <span class="reveal-word reveal-muted">hold</span> <span class="reveal-word reveal-muted">attention</span></h1>
+          <div class="work-count"><b>{len(reels)} Reels - Motion CMS</b><span>00:00:45:00</span></div>
+        </div>
+      </section>
+      <section class="wrap section-head"><div><div class="eyebrow">(01) - Reels</div><h2>Social Cuts</h2></div><a class="pill primary" href="/admin">Upload Reel</a></section>
+      <section class="wrap reel-grid">{''.join(cards) or '<p>No reels published yet.</p>'}</section>
+    </main>"""
+    return page_shell("Reels - Anamorph", body)
+
+
 def project_html(project):
+    projects = public_projects()
+    next_item = next_project(projects, project.get("slug")) or {}
     image = escape(project.get("image"))
     video = escape(project.get("video"))
     hero_media = f'<video src="{video}" poster="{image}" autoplay muted loop playsinline></video>' if video else f'<img src="{image}" alt="">'
@@ -302,7 +357,7 @@ def project_html(project):
         <div class="case-copy"><h3>The Result</h3><p>The film was finished for launch with social cutdowns, title work, and delivery-ready masters.</p></div>
         <div class="stat-grid"><div class="stat"><b>01</b><p>24H Reply Time</p></div><div class="stat"><b>02</b><p>Revision Rounds</p></div><div class="stat"><b>98%</b><p>On-time Delivery</p></div><div class="stat"><b>5D</b><p>First Cut</p></div></div>
       </section>
-      <section class="wrap next-link"><div><div class="eyebrow">Next screening</div><h2>Citadel</h2></div><a class="pill primary" href="/work">All Work</a></section>
+      <section class="wrap next-link"><div><div class="eyebrow">Next screening</div><h2>{escape(next_item.get('title', 'Selected Work'))}</h2></div><a class="pill primary" href="{('/work/' + escape(next_item.get('slug'))) if next_item.get('slug') else '/work'}">Next</a></section>
     </main>"""
     return page_shell(f"{project.get('title')} - Anamorph", body)
 
@@ -360,6 +415,30 @@ def project_form(project=None):
     </form>"""
 
 
+def reel_form(reel=None):
+    r = reel or {}
+    checked = "checked" if r.get("published", True) else ""
+    return f"""
+    <form method="post" action="/admin/reels" enctype="multipart/form-data">
+      <input type="hidden" name="id" value="{escape(r.get('id', ''))}">
+      <div class="row">
+        <label>Title<input name="title" value="{escape(r.get('title', ''))}" required></label>
+        <label>Slug<input name="slug" value="{escape(r.get('slug', ''))}" placeholder="auto from title"></label>
+      </div>
+      <div class="row">
+        <label>Duration<input name="duration" value="{escape(r.get('duration', '00:15'))}"></label>
+        <label>Format<input name="format" value="{escape(r.get('format', '9:16 Reel'))}"></label>
+      </div>
+      <label>Caption<textarea name="caption">{escape(r.get('caption', ''))}</textarea></label>
+      <div class="row">
+        <label>Poster image<input type="file" name="image" accept="image/*"></label>
+        <label>Video file<input type="file" name="video" accept="video/*"></label>
+      </div>
+      <label><span><input type="checkbox" name="published" {checked} style="width:auto"> Published</span></label>
+      <input type="submit" value="{escape('Update reel' if reel else 'Create reel')}">
+    </form>"""
+
+
 def admin_html():
     data = load_cms()
     items = []
@@ -375,8 +454,21 @@ def admin_html():
           </form>
         </div>""")
     edit_forms = "".join(f"<details><summary>Edit {escape(p.get('title'))}</summary>{project_form(p)}</details>" for p in data["projects"])
+    reel_items = []
+    for r in data.get("reels", []):
+        status = "Published" if r.get("published", True) else "Draft"
+        reel_items.append(f"""
+        <div class="item">
+          <img src="{escape(r.get('image'))}" alt="">
+          <div><strong>{escape(r.get('title'))}</strong><p>/{escape(r.get('slug'))} - {escape(r.get('duration'))} - {status}</p><a class="pill" href="/reels">Preview</a></div>
+          <form method="post" action="/admin/reels/delete" onsubmit="return confirm('Delete this reel?')">
+            <input type="hidden" name="id" value="{escape(r.get('id'))}">
+            <button class="danger">Delete</button>
+          </form>
+        </div>""")
+    reel_edit_forms = "".join(f"<details><summary>Edit {escape(r.get('title'))}</summary>{reel_form(r)}</details>" for r in data.get("reels", []))
     body = f"""
-    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/work">View Work</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
+    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/work">View Work</a><a class="pill" href="/reels">View Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
     <main class="wrap admin-grid">
       <section>
         <div class="eyebrow">(CMS) - Local Content</div>
@@ -384,11 +476,18 @@ def admin_html():
         <p>All images, videos, and project records are stored locally. Uploads are written into the workspace and served by this CMS server.</p>
         <div class="list">{''.join(items) or '<p>No projects yet.</p>'}</div>
         <div style="margin-top:24px">{edit_forms}</div>
+        <div class="section-head"><div><div class="eyebrow">(CMS) - Reels</div><h2>Reels</h2></div></div>
+        <div class="list">{''.join(reel_items) or '<p>No reels yet.</p>'}</div>
+        <div style="margin-top:24px">{reel_edit_forms}</div>
       </section>
       <aside class="panel glass">
         <div class="eyebrow">(Upload) - New Case</div>
-        <h2>New</h2>
+        <h2>Project</h2>
         {project_form()}
+        <div style="height:30px"></div>
+        <div class="eyebrow">(Upload) - New Reel</div>
+        <h2>Reel</h2>
+        {reel_form()}
       </aside>
     </main>"""
     return page_shell("Anamorph CMS", body)
@@ -457,8 +556,12 @@ class CMSHandler(SimpleHTTPRequestHandler):
             return self.send_html(admin_html())
         if path == "/api/projects":
             return self.send_json({"projects": public_projects()})
+        if path == "/api/reels":
+            return self.send_json({"reels": public_reels()})
         if path == "/work":
             return self.send_html(work_index_html())
+        if path == "/reels":
+            return self.send_html(reels_html())
         if path.startswith("/work/"):
             slug = path.split("/", 2)[2]
             project = find_project(slug)
@@ -493,6 +596,10 @@ class CMSHandler(SimpleHTTPRequestHandler):
             return self.save_project()
         if path == "/admin/projects/delete":
             return self.delete_project()
+        if path == "/admin/reels":
+            return self.save_reel()
+        if path == "/admin/reels/delete":
+            return self.delete_reel()
         return self.send_error(HTTPStatus.NOT_FOUND)
 
     def multipart_form(self):
@@ -516,7 +623,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
             slug = read_field(form, "slug") or title
             project.update({
                 "title": title,
-                "slug": unique_slug(data, slug, project_id),
+                "slug": unique_slug(data, "projects", slug, project_id),
                 "eyebrow": read_field(form, "eyebrow", project.get("eyebrow", "")),
                 "year": read_field(form, "year", project.get("year", "")),
                 "project": read_field(form, "project", project.get("project", "")),
@@ -551,6 +658,51 @@ class CMSHandler(SimpleHTTPRequestHandler):
         project_id = values.get("id", [""])[0]
         data = load_cms()
         data["projects"] = [p for p in data["projects"] if p.get("id") != project_id]
+        save_cms(data)
+        return self.redirect("/admin")
+
+    def save_reel(self):
+        try:
+            form = self.multipart_form()
+            data = load_cms()
+            data.setdefault("reels", [])
+            reel_id = read_field(form, "id") or uuid.uuid4().hex
+            existing = next((r for r in data["reels"] if r.get("id") == reel_id), None)
+            reel = dict(existing or {"id": reel_id, "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())})
+            title = read_field(form, "title", reel.get("title", "Untitled Reel"))
+            slug = read_field(form, "slug") or title
+            reel.update({
+                "title": title,
+                "slug": unique_slug(data, "reels", slug, reel_id),
+                "duration": read_field(form, "duration", reel.get("duration", "")),
+                "format": read_field(form, "format", reel.get("format", "")),
+                "caption": read_field(form, "caption", reel.get("caption", "")),
+                "published": form.getfirst("published") == "on",
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            })
+            image = save_upload(form["image"], "image") if "image" in form else ""
+            video = save_upload(form["video"], "video") if "video" in form else ""
+            if image:
+                reel["image"] = image
+            if video:
+                reel["video"] = video
+            if not reel.get("image"):
+                reel["image"] = "/assets/local/323795fc9c20f1ac.png"
+            if existing:
+                existing.update(reel)
+            else:
+                data["reels"].insert(0, reel)
+            save_cms(data)
+            return self.redirect("/admin")
+        except Exception as exc:
+            return self.send_html(page_shell("CMS Error", f"<main class='login'><section class='panel'><h1>Error</h1><p>{escape(exc)}</p><a class='pill' href='/admin'>Back</a></section></main>"), HTTPStatus.BAD_REQUEST)
+
+    def delete_reel(self):
+        length = int(self.headers.get("Content-Length", "0"))
+        values = parse_qs(self.rfile.read(length).decode())
+        reel_id = values.get("id", [""])[0]
+        data = load_cms()
+        data["reels"] = [r for r in data.get("reels", []) if r.get("id") != reel_id]
         save_cms(data)
         return self.redirect("/admin")
 
