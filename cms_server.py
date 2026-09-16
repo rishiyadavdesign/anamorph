@@ -360,6 +360,36 @@ def page_shell(title, body, extra_head=""):
     .stat-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); margin-top: 22px; }}
     .stat {{ background: rgba(10,10,10,.88); padding: 18px; }}
     .stat b {{ display: block; font-weight: 400; font-size: clamp(32px, 5vw, 64px); letter-spacing: -.07em; line-height: .9; }}
+    .work-cms {{ padding: 108px 0 120px; }}
+    .work-cms-hero {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .55fr); gap: 24px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 24px; }}
+    .work-cms-hero h2 {{ font-size: clamp(54px, 10vw, 132px); }}
+    .cms-stat-strip {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); }}
+    .cms-stat-tile {{ background: rgba(10,10,10,.86); padding: 16px; min-height: 118px; display: grid; align-content: space-between; }}
+    .cms-stat-tile b {{ font-weight: 400; font-size: clamp(34px, 5vw, 70px); line-height: .86; letter-spacing: -.07em; color: var(--paper); }}
+    .work-cms-layout {{ display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 24px; align-items: start; }}
+    .project-card-grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }}
+    .project-card {{ border: 1px solid var(--line); background: rgba(244,242,237,.04); overflow: hidden; min-width: 0; transition: transform .35s cubic-bezier(.16,1,.3,1), border-color .35s, background .35s; }}
+    .project-card:hover {{ transform: translateY(-2px); border-color: rgba(244,242,237,.24); background: rgba(244,242,237,.065); }}
+    .project-card-media {{ position: relative; aspect-ratio: 16 / 10; background: #121212; overflow: hidden; }}
+    .project-card-media img {{ width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.86) contrast(1.05); transition: transform .7s cubic-bezier(.16,1,.3,1); }}
+    .project-card:hover .project-card-media img {{ transform: scale(1.045); }}
+    .status-pill {{ position: absolute; left: 12px; top: 12px; border: 1px solid rgba(244,242,237,.24); background: rgba(10,10,10,.68); backdrop-filter: blur(12px); border-radius: 999px; padding: 7px 10px; color: var(--paper); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }}
+    .status-pill.draft {{ border-color: rgba(219,57,3,.5); color: #ffb39b; }}
+    .project-card-body {{ padding: 16px; display: grid; gap: 14px; }}
+    .project-card-title {{ display: grid; gap: 8px; }}
+    .project-card-title h3 {{ font-weight: 400; font-size: clamp(30px, 4.4vw, 58px); line-height: .9; letter-spacing: -.07em; margin: 0; }}
+    .project-card-title p {{ margin: 0; }}
+    .project-meta {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }}
+    .project-meta span {{ background: rgba(10,10,10,.82); padding: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+    .project-card-actions {{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }}
+    .project-card-actions form {{ display: block; margin-left: auto; }}
+    .project-edit {{ margin-top: 0; padding: 0; background: transparent; border: 0; }}
+    .project-edit summary {{ display: inline-flex; border: 1px solid var(--line); background: rgba(244,242,237,.06); border-radius: 999px; padding: 10px 14px; font-size: 13px; letter-spacing: -.05em; }}
+    .project-edit[open] {{ flex-basis: 100%; width: 100%; }}
+    .project-edit[open] summary {{ margin-bottom: 14px; background: rgba(244,242,237,.12); }}
+    .project-edit .cms-form-wrap {{ border-top: 1px solid var(--line); padding-top: 14px; }}
+    .new-project-panel {{ position: sticky; top: 24px; }}
+    .empty-state {{ border: 1px solid var(--line); background: rgba(244,242,237,.035); padding: 24px; color: var(--muted); }}
     .admin-grid {{ display: grid; grid-template-columns: minmax(0, 1fr) 410px; gap: 24px; padding: 108px 0 70px; }}
     .admin-grid > aside {{ position: sticky; top: 24px; align-self: start; }}
     label {{ display: grid; gap: 7px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }}
@@ -383,7 +413,7 @@ def page_shell(title, body, extra_head=""):
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
+    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .work-cms-hero, .work-cms-layout, .project-card-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
 </head>
@@ -808,37 +838,69 @@ def admin_home_html():
 
 def admin_work_html():
     data = load_cms()
-    items = []
-    for p in data["projects"]:
+    projects = data.get("projects", [])
+    published = sum(1 for p in projects if p.get("published", True))
+    drafts = len(projects) - published
+    latest_year = sorted([p.get("year") for p in projects if p.get("year")])[-1] if any(p.get("year") for p in projects) else "2026"
+    cards = []
+    for index, p in enumerate(projects, 1):
         status = "Published" if p.get("published", True) else "Draft"
-        items.append(f"""
-        <div class="item">
-          <img src="{escape(p.get('image'))}" alt="">
-          <div><strong>{escape(p.get('title'))}</strong><p>/{escape(p.get('slug'))} - {escape(p.get('year'))} - {status}</p><a class="pill" href="/work/{escape(p.get('slug'))}">Preview</a></div>
-          <form method="post" action="/admin/projects/delete" onsubmit="return confirm('Delete this project?')">
-            <input type="hidden" name="id" value="{escape(p.get('id'))}">
-            <button class="danger">Delete</button>
-          </form>
-        </div>""")
-    edit_forms = "".join(f"<details><summary>Edit {escape(p.get('title'))}</summary>{project_form(p)}</details>" for p in data["projects"])
+        status_class = " draft" if not p.get("published", True) else ""
+        cards.append(f"""
+        <article class="project-card">
+          <div class="project-card-media">
+            <img src="{escape(p.get('image') or '/assets/local/323795fc9c20f1ac.png')}" alt="">
+            <span class="status-pill{status_class}">{status}</span>
+          </div>
+          <div class="project-card-body">
+            <div class="project-card-title">
+              <div class="eyebrow">{index:02d} - /{escape(p.get('slug', ''))}</div>
+              <h3>{escape(p.get('title') or 'Untitled project')}</h3>
+              <p>{escape(p.get('project') or p.get('discipline') or 'Project')}</p>
+            </div>
+            <div class="project-meta">
+              <span>{escape(p.get('year') or 'Year')}</span>
+              <span>{escape(p.get('spec') or p.get('discipline') or 'Spec')}</span>
+              <span>{escape(p.get('client') or 'Client')}</span>
+              <span>{escape(p.get('deliverables') or 'Deliverables')}</span>
+            </div>
+            <div class="project-card-actions">
+              <a class="pill primary" href="/work/{escape(p.get('slug', ''))}">Preview</a>
+              <details class="project-edit"><summary>Edit</summary><div class="cms-form-wrap">{project_form(p)}</div></details>
+              <form method="post" action="/admin/projects/delete" onsubmit="return confirm('Delete this project?')">
+                <input type="hidden" name="id" value="{escape(p.get('id', ''))}">
+                <button class="danger">Delete</button>
+              </form>
+            </div>
+          </div>
+        </article>""")
     body = f"""
     {admin_nav('work')}
-    <main class="wrap admin-grid">
-      <section>
-        <div class="eyebrow">(CMS) - Work Page</div>
-        <h2>Projects</h2>
-        <p>Change project pages, posters, videos, copy, and publish state.</p>
-        <div class="list">{''.join(items) or '<p>No projects yet.</p>'}</div>
-        <div style="margin-top:24px">{edit_forms}</div>
+    <main class="wrap work-cms">
+      <section class="work-cms-hero">
+        <div>
+          <div class="eyebrow">(CMS) - Work Page</div>
+          <h2>Work Library</h2>
+          <p>Upload projects, update case-study text, swap posters or YouTube videos, and control what appears on the public work page.</p>
+        </div>
+        <div class="cms-stat-strip">
+          <div class="cms-stat-tile"><span class="eyebrow">Projects</span><b>{len(projects)}</b></div>
+          <div class="cms-stat-tile"><span class="eyebrow">Published</span><b>{published}</b></div>
+          <div class="cms-stat-tile"><span class="eyebrow">Drafts</span><b>{drafts}</b></div>
+        </div>
       </section>
-      <aside class="panel glass">
-        <div class="eyebrow">(Upload) - New Case</div>
-        <h2>Project</h2>
-        {project_form()}
-      </aside>
+      <section class="work-cms-layout">
+        <div class="project-card-grid">{''.join(cards) or '<div class="empty-state">No projects yet. Create the first project from the panel on the right.</div>'}</div>
+        <aside class="panel glass new-project-panel">
+          <div class="eyebrow">(Upload) - New Case</div>
+          <h2>New Project</h2>
+          <p>Add poster images, Google Drive image links, local video files, or YouTube video links. Published items show on the live Work page.</p>
+          {project_form()}
+          <div class="project-meta" style="margin-top:14px"><span>{escape(latest_year)}</span><span>{len(projects)} Total</span></div>
+        </aside>
+      </section>
     </main>"""
     return page_shell("Work CMS - Anamorph", body)
-
 
 def admin_reels_html():
     data = load_cms()
