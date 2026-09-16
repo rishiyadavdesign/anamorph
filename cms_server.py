@@ -15,7 +15,7 @@ from http import HTTPStatus
 from http.cookies import SimpleCookie
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
 DATA_FILE = ROOT / "data" / "cms.json"
@@ -105,6 +105,68 @@ def escape(value):
     return html.escape(str(value or ""), quote=True)
 
 
+def youtube_id(value=""):
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw)
+    host = parsed.netloc.lower()
+    if "youtu.be" in host:
+        return parsed.path.strip("/").split("/")[0]
+    if "youtube.com" in host:
+        if parsed.path.startswith("/watch"):
+            return parse_qs(parsed.query).get("v", [""])[0]
+        parts = [part for part in parsed.path.split("/") if part]
+        if parts and parts[0] in {"shorts", "embed", "live"} and len(parts) > 1:
+            return parts[1]
+    return ""
+
+
+def youtube_embed(value="", autoplay=False):
+    video_id = youtube_id(value)
+    if not video_id:
+        return ""
+    if autoplay:
+        params = f"autoplay=1&mute=1&loop=1&playlist={quote(video_id)}&controls=0&rel=0&playsinline=1"
+    else:
+        params = "rel=0&playsinline=1"
+    return f"https://www.youtube.com/embed/{quote(video_id)}?{params}"
+
+
+def drive_image(value=""):
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw)
+    if "drive.google.com" not in parsed.netloc.lower():
+        return raw
+    parts = [part for part in parsed.path.split("/") if part]
+    file_id = ""
+    if "d" in parts:
+        index = parts.index("d")
+        if index + 1 < len(parts):
+            file_id = parts[index + 1]
+    if not file_id:
+        file_id = parse_qs(parsed.query).get("id", [""])[0]
+    return f"https://drive.google.com/thumbnail?id={quote(file_id)}&sz=w2400" if file_id else raw
+
+
+def media_html(item, mode="card"):
+    image = escape(item.get("image"))
+    video = str(item.get("video") or "").strip()
+    title = escape(item.get("title"))
+    embed = youtube_embed(video, mode != "detail")
+    if embed:
+        css_class = ' class="detail-media"' if mode == "detail" else ""
+        return f'<iframe{css_class} src="{escape(embed)}" title="{title}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>'
+    if video:
+        controls = "controls " if mode == "detail" else ""
+        css_class = ' class="detail-media"' if mode == "detail" else ""
+        return f'<video{css_class} src="{escape(video)}" poster="{image}" {controls}autoplay muted loop playsinline></video>'
+    css_class = ' class="detail-media"' if mode == "detail" else ""
+    return f'<img{css_class} src="{image}" alt="{title}">'
+
+
 def signed_session_value():
     timestamp = str(int(time.time()))
     signature = hmac.new(secret_key(), timestamp.encode(), hashlib.sha256).hexdigest()
@@ -162,7 +224,7 @@ def page_shell(title, body, extra_head=""):
     .hero {{ min-height: 86vh; display: grid; align-items: end; padding: 120px 0 34px; border-bottom: 1px solid var(--line); position: relative; overflow: hidden; }}
     .hero.compact {{ min-height: 50vh; }}
     .hero-media {{ position: absolute; inset: 0; opacity: .48; transform: scale(1.04); animation: posterIn 2.4s cubic-bezier(.16,1,.3,1) forwards; }}
-    .hero-media img, .hero-media video {{ width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.82) contrast(1.08); }}
+    .hero-media img, .hero-media video, .hero-media iframe {{ width: 100%; height: 100%; object-fit: cover; display: block; border: 0; filter: saturate(.82) contrast(1.08); }}
     .hero-media:after {{ content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 50% 45%, transparent 0 36%, rgba(10,10,10,.5) 74%), linear-gradient(180deg, rgba(10,10,10,.22), rgba(10,10,10,.92)); }}
     .hero-content {{ position: relative; z-index: 1; }}
     .opening {{ min-height: 100vh; position: relative; display: grid; align-items: end; padding: 112px 0 38px; overflow: hidden; border-bottom: 1px solid var(--line); }}
@@ -216,8 +278,8 @@ def page_shell(title, body, extra_head=""):
     .detail-media {{ width: 100%; max-height: 76vh; object-fit: cover; background: #111; display: block; }}
     .reel-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); margin: 0 0 112px; }}
     .reel-card {{ min-height: 560px; background: #0a0a0a; display: grid; grid-template-rows: 1fr auto; overflow: hidden; position: relative; }}
-    .reel-card video, .reel-card img {{ width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.86) contrast(1.04); transform: scale(1.01); transition: transform .8s cubic-bezier(.16,1,.3,1), filter .8s; }}
-    .reel-card:hover video, .reel-card:hover img {{ transform: scale(1.055); filter: saturate(1) contrast(1.08); }}
+    .reel-card video, .reel-card img, .reel-card iframe {{ width: 100%; height: 100%; object-fit: cover; display: block; border: 0; filter: saturate(.86) contrast(1.04); transform: scale(1.01); transition: transform .8s cubic-bezier(.16,1,.3,1), filter .8s; }}
+    .reel-card:hover video, .reel-card:hover img, .reel-card:hover iframe {{ transform: scale(1.055); filter: saturate(1) contrast(1.08); }}
     .reel-meta {{ border-top: 1px solid var(--line); padding: 14px; display: grid; grid-template-columns: 1fr auto; gap: 14px; background: #0a0a0a; }}
     .reel-meta h3 {{ font-size: clamp(28px,4vw,52px); font-weight: 400; letter-spacing: -.07em; line-height: .92; margin: 0; }}
     .reel-meta p {{ margin: 6px 0 0; }}
@@ -299,9 +361,7 @@ def reels_html():
     reels = public_reels()
     cards = []
     for index, reel in enumerate(reels, 1):
-        image = escape(reel.get("image"))
-        video = escape(reel.get("video"))
-        media = f'<video src="{video}" poster="{image}" autoplay muted loop playsinline></video>' if video else f'<img src="{image}" alt="{escape(reel.get("title"))}">'
+        media = media_html(reel, "card")
         cards.append(f"""
         <article class="reel-card">
           {media}
@@ -326,10 +386,8 @@ def reels_html():
 def project_html(project):
     projects = public_projects()
     next_item = next_project(projects, project.get("slug")) or {}
-    image = escape(project.get("image"))
-    video = escape(project.get("video"))
-    hero_media = f'<video src="{video}" poster="{image}" autoplay muted loop playsinline></video>' if video else f'<img src="{image}" alt="">'
-    media = f'<video class="detail-media" src="{video}" poster="{image}" controls autoplay muted loop playsinline></video>' if video else f'<img class="detail-media" src="{image}" alt="{escape(project.get("title"))}">'
+    hero_media = media_html(project, "hero")
+    media = media_html(project, "detail")
     body = f"""
     <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill primary" href="/work">Work</a><a class="pill" href="/">Home</a><a class="pill" href="/admin">CMS</a></nav></div></header>
     <main>
@@ -410,6 +468,10 @@ def project_form(project=None):
         <label>Poster image<input type="file" name="image" accept="image/*"></label>
         <label>Video file<input type="file" name="video" accept="video/*"></label>
       </div>
+      <div class="row">
+        <label>Google Drive image URL<input name="image_url" value="{escape(p.get('image', ''))}" placeholder="Paste Drive image share link"></label>
+        <label>YouTube video URL<input name="video_url" value="{escape(p.get('video', ''))}" placeholder="Paste YouTube link"></label>
+      </div>
       <label><span><input type="checkbox" name="published" {checked} style="width:auto"> Published</span></label>
       <input type="submit" value="{escape('Update project' if project else 'Create project')}">
     </form>"""
@@ -433,6 +495,10 @@ def reel_form(reel=None):
       <div class="row">
         <label>Poster image<input type="file" name="image" accept="image/*"></label>
         <label>Video file<input type="file" name="video" accept="video/*"></label>
+      </div>
+      <div class="row">
+        <label>Google Drive image URL<input name="image_url" value="{escape(r.get('image', ''))}" placeholder="Paste Drive image share link"></label>
+        <label>YouTube video URL<input name="video_url" value="{escape(r.get('video', ''))}" placeholder="Paste YouTube link"></label>
       </div>
       <label><span><input type="checkbox" name="published" {checked} style="width:auto"> Published</span></label>
       <input type="submit" value="{escape('Update reel' if reel else 'Create reel')}">
@@ -638,10 +704,16 @@ class CMSHandler(SimpleHTTPRequestHandler):
             })
             image = save_upload(form["image"], "image") if "image" in form else ""
             video = save_upload(form["video"], "video") if "video" in form else ""
+            image_url = drive_image(read_field(form, "image_url"))
+            video_url = read_field(form, "video_url")
             if image:
                 project["image"] = image
+            elif image_url:
+                project["image"] = image_url
             if video:
                 project["video"] = video
+            elif video_url:
+                project["video"] = video_url
             if not project.get("image"):
                 project["image"] = "/assets/local/4408de2269c8641c.jpg"
             if existing:
@@ -683,10 +755,16 @@ class CMSHandler(SimpleHTTPRequestHandler):
             })
             image = save_upload(form["image"], "image") if "image" in form else ""
             video = save_upload(form["video"], "video") if "video" in form else ""
+            image_url = drive_image(read_field(form, "image_url"))
+            video_url = read_field(form, "video_url")
             if image:
                 reel["image"] = image
+            elif image_url:
+                reel["image"] = image_url
             if video:
                 reel["video"] = video
+            elif video_url:
+                reel["video"] = video_url
             if not reel.get("image"):
                 reel["image"] = "/assets/local/323795fc9c20f1ac.png"
             if existing:

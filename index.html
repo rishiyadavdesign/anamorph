@@ -177,6 +177,22 @@
 	<!-- Start of bodyEnd -->
     <script>
       (() => {
+        const youtubeId = (value = "") => {
+          try {
+            const url = new URL(value);
+            if (url.hostname.includes("youtu.be")) return url.pathname.split("/").filter(Boolean)[0] || "";
+            if (url.hostname.includes("youtube.com")) {
+              if (url.pathname.startsWith("/watch")) return url.searchParams.get("v") || "";
+              const parts = url.pathname.split("/").filter(Boolean);
+              if (["shorts", "embed", "live"].includes(parts[0])) return parts[1] || "";
+            }
+          } catch (_) {}
+          return "";
+        };
+        const youtubeEmbed = (value = "") => {
+          const id = youtubeId(value);
+          return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&loop=1&playlist=${encodeURIComponent(id)}&controls=0&rel=0&playsinline=1` : "";
+        };
         const applyHomeReels = async () => {
           try {
             const response = await fetch("/api/reels", { cache: "no-store" });
@@ -189,6 +205,31 @@
               const reel = reels[index];
               if (!reel.video || video.dataset.cmsReelVideo === reel.video) return;
               video.dataset.cmsReelVideo = reel.video;
+              const embed = youtubeEmbed(reel.video);
+              let iframe = video.parentElement?.querySelector(":scope > iframe[data-cms-reel-embed]");
+              if (embed) {
+                if (!iframe) {
+                  iframe = document.createElement("iframe");
+                  iframe.dataset.cmsReelEmbed = "true";
+                  iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+                  iframe.allowFullscreen = true;
+                  Object.assign(iframe.style, {
+                    position: "absolute",
+                    inset: "0",
+                    width: "100%",
+                    height: "100%",
+                    border: "0",
+                    objectFit: "cover",
+                    zIndex: "2"
+                  });
+                  video.parentElement?.appendChild(iframe);
+                }
+                iframe.src = embed;
+                video.style.opacity = "0";
+                return;
+              }
+              if (iframe) iframe.remove();
+              video.style.opacity = "";
               video.src = `${reel.video}#t=0.1`;
               if (reel.image) video.poster = reel.image;
               video.muted = true;
