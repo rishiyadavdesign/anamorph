@@ -312,6 +312,10 @@ def page_shell(title, body, extra_head=""):
     .cms-fieldset-title {{ display: flex; justify-content: space-between; gap: 16px; color: var(--paper); font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }}
     .cms-fieldset-title span {{ color: var(--muted); }}
     .cms-advanced {{ border-color: rgba(244,242,237,.16); background: rgba(10,10,10,.28); }}
+    .home-section-map {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }}
+    .home-section-chip {{ border-radius: 8px; text-align: left; display: grid; gap: 4px; padding: 10px; background: rgba(244,242,237,.045); }}
+    .home-section-chip strong {{ font-weight: 400; color: var(--paper); font-size: 14px; }}
+    .home-section-chip span {{ color: var(--muted); font-size: 12px; }}
     .cms-actions {{ display: flex; gap: 8px; flex-wrap: wrap; }}
     .card {{ border-top: 1px solid var(--line); padding-top: 14px; position: relative; animation: riseIn 1.2s cubic-bezier(.16,1,.3,1) both; }}
     .card:nth-child(2) {{ animation-delay: .08s; }}
@@ -564,9 +568,14 @@ def home_form(home=None):
         <div>
           <div class="eyebrow">Guided home editor</div>
           <h2>Text & Images</h2>
-          <p>Pick anything currently on the homepage, add the new value, then save.</p>
+          <p>Scan the homepage, choose a section, then pick the exact text or image from that section.</p>
         </div>
         <button class="primary" type="button" data-scan-home>Scan Homepage</button>
+      </div>
+      <div class="cms-fieldset">
+        <div class="cms-fieldset-title"><span>00</span><strong>Homepage sections</strong></div>
+        <label>Filter by section<select id="homeSectionFilter"><option value="">All homepage sections</option></select></label>
+        <div id="homeSectionMap" class="home-section-map"></div>
       </div>
       <datalist id="homeTextOptions"></datalist>
       <datalist id="homeImageOptions"></datalist>
@@ -593,17 +602,62 @@ def home_form(home=None):
       <input type="submit" value="Update home page">
       <script>
       (function() {{
-        function unique(values) {{
-          return Array.from(new Set(values.map(function(v) {{ return (v || '').trim(); }}).filter(function(v) {{ return v.length > 1; }}))).slice(0, 350);
+        var state = {{ texts: [], images: [], sections: [] }};
+        function clean(value) {{ return (value || '').replace(/\s+/g, ' ').trim(); }}
+        function sectionName(el) {{
+          var section = el && el.closest && el.closest('section,[data-framer-name],footer,header');
+          if (!section) return 'Global';
+          return section.getAttribute('data-framer-name') || section.id || section.tagName || 'Global';
         }}
-        function fill(list, values) {{
+        function uniqueItems(items) {{
+          var seen = {{}};
+          return items.filter(function(item) {{
+            var key = item.section + '::' + item.value;
+            if (seen[key] || !item.value) return false;
+            seen[key] = 1;
+            return true;
+          }}).slice(0, 500);
+        }}
+        function filtered(items) {{
+          var section = (document.getElementById('homeSectionFilter') || {{}}).value || '';
+          return section ? items.filter(function(item) {{ return item.section === section; }}) : items;
+        }}
+        function fill(list, items) {{
           var el = document.getElementById(list);
           if (!el) return;
           el.innerHTML = '';
-          unique(values).forEach(function(value) {{
+          filtered(items).forEach(function(item) {{
             var option = document.createElement('option');
-            option.value = value;
+            option.value = item.value;
+            option.label = item.section;
             el.appendChild(option);
+          }});
+        }}
+        function refresh() {{
+          fill('homeTextOptions', state.texts);
+          fill('homeImageOptions', state.images);
+        }}
+        function renderSections() {{
+          var select = document.getElementById('homeSectionFilter');
+          var map = document.getElementById('homeSectionMap');
+          if (!select || !map) return;
+          select.innerHTML = '<option value="">All homepage sections</option>';
+          state.sections.forEach(function(section) {{
+            var option = document.createElement('option');
+            option.value = section;
+            option.textContent = section;
+            select.appendChild(option);
+          }});
+          map.innerHTML = '';
+          state.sections.forEach(function(section) {{
+            var textCount = state.texts.filter(function(item) {{ return item.section === section; }}).length;
+            var imageCount = state.images.filter(function(item) {{ return item.section === section; }}).length;
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'home-section-chip';
+            button.innerHTML = '<strong>' + section + '</strong><span>' + textCount + ' text / ' + imageCount + ' image</span>';
+            button.addEventListener('click', function() {{ select.value = section; refresh(); }});
+            map.appendChild(button);
           }});
         }}
         async function scan() {{
@@ -617,24 +671,30 @@ def home_form(home=None):
               acceptNode: function(node) {{
                 var parent = node.parentElement;
                 if (!parent || blocked[parent.tagName]) return NodeFilter.FILTER_REJECT;
-                var text = node.nodeValue.replace(/\\s+/g, ' ').trim();
+                var text = clean(node.nodeValue);
                 return text.length > 1 && text.length < 220 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
               }}
             }});
-            while (walker.nextNode()) texts.push(walker.currentNode.nodeValue.replace(/\\s+/g, ' ').trim());
+            while (walker.nextNode()) texts.push({{ value: clean(walker.currentNode.nodeValue), section: sectionName(walker.currentNode.parentElement) }});
             var images = [];
             doc.querySelectorAll('img').forEach(function(img) {{
+              var section = sectionName(img);
               var src = img.getAttribute('src');
-              if (src) images.push(src);
+              if (src) images.push({{ value: src, section: section }});
               (img.getAttribute('srcset') || '').split(',').forEach(function(part) {{
-                var first = part.trim().split(/\\s+/)[0];
-                if (first) images.push(first);
+                var first = part.trim().split(/\s+/)[0];
+                if (first) images.push({{ value: first, section: section }});
               }});
             }});
-            fill('homeTextOptions', texts);
-            fill('homeImageOptions', images);
+            state.texts = uniqueItems(texts);
+            state.images = uniqueItems(images);
+            state.sections = Array.from(new Set(state.texts.concat(state.images).map(function(item) {{ return item.section; }}))).filter(Boolean);
+            renderSections();
+            refresh();
           }} catch (e) {{}}
         }}
+        var filter = document.getElementById('homeSectionFilter');
+        if (filter) filter.addEventListener('change', refresh);
         var scanButton = document.querySelector('[data-scan-home]');
         if (scanButton) scanButton.addEventListener('click', scan);
         scan();
