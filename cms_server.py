@@ -117,6 +117,13 @@ def text_to_pairs(value):
     return pairs
 
 
+def append_pair(pairs, old, new):
+    old = str(old or "").strip()
+    new = str(new or "").strip()
+    if old and new:
+        pairs.append({"from": old, "to": new})
+
+
 def find_project(slug):
     for project in public_projects():
         if project.get("slug") == slug:
@@ -294,6 +301,18 @@ def page_shell(title, body, extra_head=""):
     .work-project {{ font-size: clamp(20px,2.3vw,34px); line-height: 1.02; letter-spacing: -.055em; color: var(--muted); }}
     .work-thumb {{ position: absolute; right: 18%; top: 50%; width: min(34vw,430px); aspect-ratio: 16 / 9; object-fit: cover; opacity: 0; transform: translateY(-50%) scale(.96); transition: .55s cubic-bezier(.16,1,.3,1); pointer-events: none; z-index: 2; box-shadow: 0 22px 80px rgba(0,0,0,.42); }}
     .grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; padding: 28px 0 90px; }}
+    .cms-card-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 28px 0 120px; }}
+    .cms-card {{ min-height: 260px; display: grid; align-content: space-between; border: 1px solid var(--line); background: rgba(244,242,237,.045); padding: 18px; transition: transform .35s cubic-bezier(.16,1,.3,1), border-color .35s, background .35s; }}
+    .cms-card:hover {{ transform: translateY(-2px); border-color: rgba(244,242,237,.26); background: rgba(244,242,237,.07); }}
+    .cms-card h2 {{ font-size: clamp(40px,6vw,72px); }}
+    .cms-form {{ display: grid; gap: 18px; }}
+    .cms-editor-head {{ display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 18px; }}
+    .cms-editor-head h2 {{ font-size: clamp(38px,6vw,76px); }}
+    .cms-fieldset {{ border: 1px solid var(--line); background: rgba(244,242,237,.035); padding: 14px; display: grid; gap: 14px; }}
+    .cms-fieldset-title {{ display: flex; justify-content: space-between; gap: 16px; color: var(--paper); font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }}
+    .cms-fieldset-title span {{ color: var(--muted); }}
+    .cms-advanced {{ border-color: rgba(244,242,237,.16); background: rgba(10,10,10,.28); }}
+    .cms-actions {{ display: flex; gap: 8px; flex-wrap: wrap; }}
     .card {{ border-top: 1px solid var(--line); padding-top: 14px; position: relative; animation: riseIn 1.2s cubic-bezier(.16,1,.3,1) both; }}
     .card:nth-child(2) {{ animation-delay: .08s; }}
     .card:nth-child(3) {{ animation-delay: .16s; }}
@@ -327,9 +346,11 @@ def page_shell(title, body, extra_head=""):
     .stat-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); margin-top: 22px; }}
     .stat {{ background: rgba(10,10,10,.88); padding: 18px; }}
     .stat b {{ display: block; font-weight: 400; font-size: clamp(32px, 5vw, 64px); letter-spacing: -.07em; line-height: .9; }}
-    .admin-grid {{ display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 24px; padding: 108px 0 70px; }}
+    .admin-grid {{ display: grid; grid-template-columns: minmax(0, 1fr) 410px; gap: 24px; padding: 108px 0 70px; }}
+    .admin-grid > aside {{ position: sticky; top: 24px; align-self: start; }}
     label {{ display: grid; gap: 7px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }}
     input, textarea, select {{ width: 100%; border: 1px solid var(--line); background: rgba(244,242,237,.06); color: var(--paper); padding: 12px; border-radius: 8px; font: inherit; outline: none; }}
+    input:focus, textarea:focus, select:focus {{ border-color: rgba(244,242,237,.34); background: rgba(244,242,237,.085); }}
     input:focus, textarea:focus {{ border-color: rgba(244,242,237,.36); background: rgba(244,242,237,.09); }}
     textarea {{ min-height: 110px; resize: vertical; }}
     form {{ display: grid; gap: 14px; }}
@@ -348,7 +369,7 @@ def page_shell(title, body, extra_head=""):
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy, .reel-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
+    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
 </head>
@@ -538,15 +559,87 @@ def reel_form(reel=None):
 def home_form(home=None):
     h = home or {}
     return f"""
-    <form method="post" action="/admin/home" enctype="multipart/form-data">
-      <label>Home text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">{escape(pairs_to_text(h.get('text_replacements', [])))}</textarea></label>
-      <label>Home image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">{escape(pairs_to_text(h.get('image_replacements', [])))}</textarea></label>
-      <div class="row">
-        <label>Replace this image URL<input name="image_target" placeholder="Paste current home image URL"></label>
-        <label>With Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label>
+    <form class="cms-form" method="post" action="/admin/home" enctype="multipart/form-data">
+      <div class="cms-editor-head">
+        <div>
+          <div class="eyebrow">Guided home editor</div>
+          <h2>Text & Images</h2>
+          <p>Pick anything currently on the homepage, add the new value, then save.</p>
+        </div>
+        <button class="primary" type="button" data-scan-home>Scan Homepage</button>
       </div>
-      <label>Or upload replacement image<input type="file" name="image" accept="image/*"></label>
+      <datalist id="homeTextOptions"></datalist>
+      <datalist id="homeImageOptions"></datalist>
+      <div class="cms-fieldset">
+        <div class="cms-fieldset-title"><span>01</span><strong>Change one text</strong></div>
+        <div class="row">
+          <label>Current homepage text<input name="text_from" list="homeTextOptions" placeholder="Choose or paste current text"></label>
+          <label>New text<input name="text_to" placeholder="Type replacement text"></label>
+        </div>
+      </div>
+      <div class="cms-fieldset">
+        <div class="cms-fieldset-title"><span>02</span><strong>Change one image</strong></div>
+        <div class="row">
+          <label>Current image URL<input name="image_target" list="homeImageOptions" placeholder="Choose or paste current image URL"></label>
+          <label>New Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label>
+        </div>
+        <label>Or upload replacement image<input type="file" name="image" accept="image/*"></label>
+      </div>
+      <details class="cms-advanced" open>
+        <summary>Advanced saved replacements</summary>
+        <label>All text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">{escape(pairs_to_text(h.get('text_replacements', [])))}</textarea></label>
+        <label>All image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">{escape(pairs_to_text(h.get('image_replacements', [])))}</textarea></label>
+      </details>
       <input type="submit" value="Update home page">
+      <script>
+      (function() {{
+        function unique(values) {{
+          return Array.from(new Set(values.map(function(v) {{ return (v || '').trim(); }}).filter(function(v) {{ return v.length > 1; }}))).slice(0, 350);
+        }}
+        function fill(list, values) {{
+          var el = document.getElementById(list);
+          if (!el) return;
+          el.innerHTML = '';
+          unique(values).forEach(function(value) {{
+            var option = document.createElement('option');
+            option.value = value;
+            el.appendChild(option);
+          }});
+        }}
+        async function scan() {{
+          try {{
+            var res = await fetch('/', {{ cache: 'no-store' }});
+            var html = await res.text();
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var blocked = {{ SCRIPT: 1, STYLE: 1, NOSCRIPT: 1 }};
+            var texts = [];
+            var walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {{
+              acceptNode: function(node) {{
+                var parent = node.parentElement;
+                if (!parent || blocked[parent.tagName]) return NodeFilter.FILTER_REJECT;
+                var text = node.nodeValue.replace(/\\s+/g, ' ').trim();
+                return text.length > 1 && text.length < 220 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+              }}
+            }});
+            while (walker.nextNode()) texts.push(walker.currentNode.nodeValue.replace(/\\s+/g, ' ').trim());
+            var images = [];
+            doc.querySelectorAll('img').forEach(function(img) {{
+              var src = img.getAttribute('src');
+              if (src) images.push(src);
+              (img.getAttribute('srcset') || '').split(',').forEach(function(part) {{
+                var first = part.trim().split(/\\s+/)[0];
+                if (first) images.push(first);
+              }});
+            }});
+            fill('homeTextOptions', texts);
+            fill('homeImageOptions', images);
+          }} catch (e) {{}}
+        }}
+        var scanButton = document.querySelector('[data-scan-home]');
+        if (scanButton) scanButton.addEventListener('click', scan);
+        scan();
+      }})();
+      </script>
     </form>"""
 
 
@@ -570,10 +663,10 @@ def admin_html():
         </div>
       </section>
       <section class="section-head"><div><div class="eyebrow">(CMS) - Sections</div><h2>Edit Pages</h2></div></section>
-      <section class="grid" style="padding:28px 0 120px">
-        <a class="panel glass" href="/admin/home"><div class="eyebrow">Home Page</div><h2>Home CMS</h2><p>Change homepage text, images, and original Framer content replacements.</p></a>
-        <a class="panel glass" href="/admin/work"><div class="eyebrow">Projects</div><h2>Work CMS</h2><p>Add, edit, publish, and delete project pages.</p></a>
-        <a class="panel glass" href="/admin/reels"><div class="eyebrow">Homepage Videos</div><h2>Reels CMS</h2><p>Change the first three homepage reel videos and the reels page.</p></a>
+      <section class="cms-card-grid">
+        <a class="cms-card" href="/admin/home"><div><div class="eyebrow">Home Page</div><h2>Home CMS</h2><p>Change homepage text, images, and original Framer content replacements.</p></div><span class="pill primary">Edit Home</span></a>
+        <a class="cms-card" href="/admin/work"><div><div class="eyebrow">Projects</div><h2>Work CMS</h2><p>Add, edit, publish, and delete project pages.</p></div><span class="pill primary">Edit Work</span></a>
+        <a class="cms-card" href="/admin/reels"><div><div class="eyebrow">Homepage Videos</div><h2>Reels CMS</h2><p>Change the first three homepage reel videos and the reels page.</p></div><span class="pill primary">Edit Reels</span></a>
       </section>
     </main>"""
     return page_shell("Anamorph CMS", body)
@@ -862,6 +955,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
                 "image_replacements": text_to_pairs(read_field(form, "image_replacements")),
                 "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             }
+            append_pair(home["text_replacements"], read_field(form, "text_from"), read_field(form, "text_to"))
             target = read_field(form, "image_target")
             image = save_upload(form["image"], "image") if "image" in form else ""
             image_url = drive_image(read_field(form, "image_url"))
