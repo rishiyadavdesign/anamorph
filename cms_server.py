@@ -360,6 +360,21 @@ def page_shell(title, body, extra_head=""):
     .stat-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); margin-top: 22px; }}
     .stat {{ background: rgba(10,10,10,.88); padding: 18px; }}
     .stat b {{ display: block; font-weight: 400; font-size: clamp(32px, 5vw, 64px); letter-spacing: -.07em; line-height: .9; }}
+    .home-cms {{ padding: 108px 0 120px; }}
+    .home-cms-hero {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .55fr); gap: 24px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 24px; }}
+    .home-cms-hero h2 {{ font-size: clamp(54px,10vw,132px); }}
+    .home-studio-layout {{ display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 24px; align-items: start; }}
+    .home-editor-panel {{ border: 1px solid var(--line); background: rgba(244,242,237,.04); padding: 18px; }}
+    .home-editor-grid {{ display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }}
+    .home-tool-card {{ border: 1px solid var(--line); background: rgba(10,10,10,.36); padding: 16px; display: grid; gap: 14px; min-width: 0; }}
+    .home-tool-card.full {{ grid-column: 1 / -1; }}
+    .home-tool-card h3 {{ font-weight: 400; font-size: clamp(28px,4vw,52px); line-height: .9; letter-spacing: -.07em; margin: 0; }}
+    .saved-replacements {{ display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }}
+    .saved-replacements textarea {{ min-height: 220px; }}
+    .home-side-panel {{ position: sticky; top: 24px; }}
+    .home-step-list {{ display: grid; gap: 1px; background: var(--line); margin-top: 18px; }}
+    .home-step-list span {{ background: rgba(10,10,10,.82); padding: 12px; color: var(--muted); font-size: 13px; }}
+    .scan-status {{ min-height: 20px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }}
     .work-cms {{ padding: 108px 0 120px; }}
     .work-cms-hero {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .55fr); gap: 24px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 24px; }}
     .work-cms-hero h2 {{ font-size: clamp(54px, 10vw, 132px); }}
@@ -413,7 +428,7 @@ def page_shell(title, body, extra_head=""):
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .work-cms-hero, .work-cms-layout, .project-card-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
+    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .home-cms-hero, .home-studio-layout, .home-editor-grid, .saved-replacements, .work-cms-hero, .work-cms-layout, .project-card-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip, .cms-stat-strip, .home-section-map {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
 </head>
@@ -649,43 +664,44 @@ def home_form(home=None):
       <div class="cms-editor-head">
         <div>
           <div class="eyebrow">Guided home editor</div>
-          <h2>Text & Images</h2>
-          <p>Scan the homepage, choose a section, then pick the exact text or image from that section.</p>
+          <h2>Content Studio</h2>
+          <p>Scan the live homepage, choose the exact section, then replace one text or image without touching the Framer layout.</p>
         </div>
-        <button class="primary" type="button" data-scan-home>Scan Homepage</button>
+        <div><button class="primary" type="button" data-scan-home>Scan Homepage</button><div class="scan-status" data-scan-status>Ready to scan</div></div>
       </div>
-      <div class="cms-fieldset">
-        <div class="cms-fieldset-title"><span>00</span><strong>Homepage sections</strong></div>
-        <label>Filter by section<select id="homeSectionFilter"><option value="">All homepage sections</option></select></label>
-        <div id="homeSectionMap" class="home-section-map"></div>
+      <div class="home-editor-grid">
+        <section class="home-tool-card full">
+          <div class="cms-fieldset-title"><span>00</span><strong>Homepage sections</strong></div>
+          <label>Filter by section<select id="homeSectionFilter"><option value="">All homepage sections</option></select></label>
+          <div id="homeSectionMap" class="home-section-map"></div>
+        </section>
+        <section class="home-tool-card">
+          <div><div class="eyebrow">01 - Text</div><h3>Replace Copy</h3><p>Pick existing homepage text, then type the new text.</p></div>
+          <label>Current homepage text<input name="text_from" list="homeTextOptions" placeholder="Choose or paste current text"></label>
+          <label>New text<input name="text_to" placeholder="Type replacement text"></label>
+        </section>
+        <section class="home-tool-card">
+          <div><div class="eyebrow">02 - Image</div><h3>Swap Visual</h3><p>Choose an existing image, then upload a replacement or paste a Google Drive image link.</p></div>
+          <label>Current image URL<input name="image_target" list="homeImageOptions" placeholder="Choose or paste current image URL"></label>
+          <label>New Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label>
+          <label>Or upload replacement image<input type="file" name="image" accept="image/*"></label>
+        </section>
+        <section class="home-tool-card full">
+          <div class="cms-fieldset-title"><span>03</span><strong>Saved replacements</strong></div>
+          <div class="saved-replacements">
+            <label>All text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">{escape(pairs_to_text(h.get('text_replacements', [])))}</textarea></label>
+            <label>All image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">{escape(pairs_to_text(h.get('image_replacements', [])))}</textarea></label>
+          </div>
+        </section>
       </div>
       <datalist id="homeTextOptions"></datalist>
       <datalist id="homeImageOptions"></datalist>
-      <div class="cms-fieldset">
-        <div class="cms-fieldset-title"><span>01</span><strong>Change one text</strong></div>
-        <div class="row">
-          <label>Current homepage text<input name="text_from" list="homeTextOptions" placeholder="Choose or paste current text"></label>
-          <label>New text<input name="text_to" placeholder="Type replacement text"></label>
-        </div>
-      </div>
-      <div class="cms-fieldset">
-        <div class="cms-fieldset-title"><span>02</span><strong>Change one image</strong></div>
-        <div class="row">
-          <label>Current image URL<input name="image_target" list="homeImageOptions" placeholder="Choose or paste current image URL"></label>
-          <label>New Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label>
-        </div>
-        <label>Or upload replacement image<input type="file" name="image" accept="image/*"></label>
-      </div>
-      <details class="cms-advanced" open>
-        <summary>Advanced saved replacements</summary>
-        <label>All text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">{escape(pairs_to_text(h.get('text_replacements', [])))}</textarea></label>
-        <label>All image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">{escape(pairs_to_text(h.get('image_replacements', [])))}</textarea></label>
-      </details>
       <input type="submit" value="Update home page">
       <script>
       (function() {{
         var state = {{ texts: [], images: [], sections: [] }};
         function clean(value) {{ return (value || '').replace(/\s+/g, ' ').trim(); }}
+        function status(value) {{ var el = document.querySelector('[data-scan-status]'); if (el) el.textContent = value; }}
         function sectionName(el) {{
           var section = el && el.closest && el.closest('section,[data-framer-name],footer,header');
           if (!section) return 'Global';
@@ -743,6 +759,7 @@ def home_form(home=None):
           }});
         }}
         async function scan() {{
+          status('Scanning homepage');
           try {{
             var res = await fetch('/', {{ cache: 'no-store' }});
             var html = await res.text();
@@ -773,7 +790,8 @@ def home_form(home=None):
             state.sections = Array.from(new Set(state.texts.concat(state.images).map(function(item) {{ return item.section; }}))).filter(Boolean);
             renderSections();
             refresh();
-          }} catch (e) {{}}
+            status(state.sections.length + ' sections scanned');
+          }} catch (e) {{ status('Scan failed - refresh and try again'); }}
         }}
         var filter = document.getElementById('homeSectionFilter');
         if (filter) filter.addEventListener('change', refresh);
@@ -816,22 +834,34 @@ def admin_html():
 
 def admin_home_html():
     data = load_cms()
+    home = data.get('home', {})
+    text_count = len(home.get('text_replacements', []))
+    image_count = len(home.get('image_replacements', []))
     body = f"""
     {admin_nav('home')}
-    <main class="wrap admin-grid">
-      <section>
-        <div class="eyebrow">(CMS) - Home Page</div>
-        <h2>Home Content</h2>
-        <p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p>
-        <div class="panel">{home_form(data.get('home', {}))}</div>
+    <main class="wrap home-cms">
+      <section class="home-cms-hero">
+        <div>
+          <div class="eyebrow">(CMS) - Home Page</div>
+          <h2>Homepage Studio</h2>
+          <p>Edit homepage copy and visuals while the original Framer design, layout, and animation stay locked in place.</p>
+        </div>
+        <div class="cms-stat-strip">
+          <div class="cms-stat-tile"><span class="eyebrow">Text swaps</span><b>{text_count}</b></div>
+          <div class="cms-stat-tile"><span class="eyebrow">Image swaps</span><b>{image_count}</b></div>
+          <div class="cms-stat-tile"><span class="eyebrow">Mode</span><b>Live</b></div>
+        </div>
       </section>
-      <aside class="panel glass">
-        <div class="eyebrow">(Preview)</div>
-        <h2>Home</h2>
-        <p>Use text replacement rows for copy and image replacement rows for visual assets.</p>
-        <a class="pill primary" href="/">Open Home</a>
-        <a class="pill" href="/#reels">Home Reels</a>
-      </aside>
+      <section class="home-studio-layout">
+        <div class="home-editor-panel">{home_form(home)}</div>
+        <aside class="panel glass home-side-panel">
+          <div class="eyebrow">(Preview)</div>
+          <h2>Home</h2>
+          <p>Scan the homepage first, choose the section, then save one replacement at a time or edit the saved lists directly.</p>
+          <div class="cms-actions"><a class="pill primary" href="/">Open Home</a><a class="pill" href="/#reels">Home Reels</a></div>
+          <div class="home-step-list"><span>01 - Scan live homepage</span><span>02 - Pick section and item</span><span>03 - Save and refresh site</span></div>
+        </aside>
+      </section>
     </main>"""
     return page_shell("Home CMS - Anamorph", body)
 
