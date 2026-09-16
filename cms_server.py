@@ -360,6 +360,21 @@ def page_shell(title, body, extra_head=""):
     .stat-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); margin-top: 22px; }}
     .stat {{ background: rgba(10,10,10,.88); padding: 18px; }}
     .stat b {{ display: block; font-weight: 400; font-size: clamp(32px, 5vw, 64px); letter-spacing: -.07em; line-height: .9; }}
+    .reels-cms {{ padding: 108px 0 120px; }}
+    .reels-cms-hero {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .55fr); gap: 24px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 24px; }}
+    .reels-cms-hero h2 {{ font-size: clamp(54px,10vw,132px); }}
+    .reels-cms-layout {{ display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 24px; align-items: start; }}
+    .reel-card-grid {{ display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }}
+    .cms-reel-card {{ border: 1px solid var(--line); background: rgba(244,242,237,.04); overflow: hidden; min-width: 0; transition: transform .35s cubic-bezier(.16,1,.3,1), border-color .35s, background .35s; }}
+    .cms-reel-card:hover {{ transform: translateY(-2px); border-color: rgba(244,242,237,.24); background: rgba(244,242,237,.065); }}
+    .cms-reel-media {{ position: relative; aspect-ratio: 9 / 14; background: #121212; overflow: hidden; }}
+    .cms-reel-media img, .cms-reel-media video, .cms-reel-media iframe {{ width: 100%; height: 100%; object-fit: cover; display: block; border: 0; filter: saturate(.88) contrast(1.06); transition: transform .7s cubic-bezier(.16,1,.3,1); }}
+    .cms-reel-card:hover .cms-reel-media img, .cms-reel-card:hover .cms-reel-media video, .cms-reel-card:hover .cms-reel-media iframe {{ transform: scale(1.035); }}
+    .cms-reel-body {{ padding: 16px; display: grid; gap: 14px; }}
+    .cms-reel-title {{ display: grid; gap: 8px; }}
+    .cms-reel-title h3 {{ font-weight: 400; font-size: clamp(28px,3.6vw,48px); line-height: .9; letter-spacing: -.07em; margin: 0; }}
+    .cms-reel-title p {{ margin: 0; }}
+    .new-reel-panel {{ position: sticky; top: 24px; }}
     .home-cms {{ padding: 108px 0 120px; }}
     .home-cms-hero {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .55fr); gap: 24px; align-items: end; border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 24px; }}
     .home-cms-hero h2 {{ font-size: clamp(54px,10vw,132px); }}
@@ -428,7 +443,7 @@ def page_shell(title, body, extra_head=""):
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .home-cms-hero, .home-studio-layout, .home-editor-grid, .saved-replacements, .work-cms-hero, .work-cms-layout, .project-card-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip, .cms-stat-strip, .home-section-map {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
+    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .reels-cms-hero, .reels-cms-layout, .reel-card-grid, .home-cms-hero, .home-studio-layout, .home-editor-grid, .saved-replacements, .work-cms-hero, .work-cms-layout, .project-card-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip, .cms-stat-strip, .home-section-map {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
 </head>
@@ -934,37 +949,60 @@ def admin_work_html():
 
 def admin_reels_html():
     data = load_cms()
-    reel_items = []
-    for r in data.get("reels", []):
+    reels = data.get("reels", [])
+    published = sum(1 for r in reels if r.get("published", True))
+    drafts = len(reels) - published
+    homepage_slots = min(published, 3)
+    cards = []
+    for index, r in enumerate(reels, 1):
         status = "Published" if r.get("published", True) else "Draft"
-        reel_items.append(f"""
-        <div class="item">
-          <img src="{escape(r.get('image'))}" alt="">
-          <div><strong>{escape(r.get('title'))}</strong><p>/{escape(r.get('slug'))} - {escape(r.get('duration'))} - {status}</p><a class="pill" href="/reels">Preview</a></div>
-          <form method="post" action="/admin/reels/delete" onsubmit="return confirm('Delete this reel?')">
-            <input type="hidden" name="id" value="{escape(r.get('id'))}">
-            <button class="danger">Delete</button>
-          </form>
-        </div>""")
-    reel_edit_forms = "".join(f"<details><summary>Edit {escape(r.get('title'))}</summary>{reel_form(r)}</details>" for r in data.get("reels", []))
+        status_class = " draft" if not r.get("published", True) else ""
+        media = media_html({**r, "image": r.get("image") or "/assets/local/323795fc9c20f1ac.png"}, "card")
+        cards.append(f"""
+        <article class="cms-reel-card">
+          <div class="cms-reel-media">{media}<span class="status-pill{status_class}">{status}</span></div>
+          <div class="cms-reel-body">
+            <div class="cms-reel-title">
+              <div class="eyebrow">{index:02d} - /{escape(r.get('slug', ''))}</div>
+              <h3>{escape(r.get('title') or 'Untitled reel')}</h3>
+              <p>{escape(r.get('caption') or 'Homepage reel slot')}</p>
+            </div>
+            <div class="project-meta"><span>{escape(r.get('duration') or '00:15')}</span><span>{escape(r.get('format') or '9:16 Reel')}</span></div>
+            <div class="project-card-actions">
+              <a class="pill primary" href="/reels">Preview</a>
+              <details class="project-edit"><summary>Edit</summary><div class="cms-form-wrap">{reel_form(r)}</div></details>
+              <form method="post" action="/admin/reels/delete" onsubmit="return confirm('Delete this reel?')">
+                <input type="hidden" name="id" value="{escape(r.get('id', ''))}">
+                <button class="danger">Delete</button>
+              </form>
+            </div>
+          </div>
+        </article>""")
     body = f"""
     {admin_nav('reels')}
-    <main class="wrap admin-grid">
-      <section>
-        <div class="eyebrow">(CMS) - Home Reels</div>
-        <h2>Homepage Videos</h2>
-        <p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p>
-        <div class="list">{''.join(reel_items) or '<p>No reels yet.</p>'}</div>
-        <div style="margin-top:24px">{reel_edit_forms}</div>
+    <main class="wrap reels-cms">
+      <section class="reels-cms-hero">
+        <div>
+          <div class="eyebrow">(CMS) - Home Reels</div>
+          <h2>Reel Library</h2>
+          <p>Change the short-form videos used on the reels page and the first three published home page reel slots.</p>
+        </div>
+        <div class="cms-stat-strip">
+          <div class="cms-stat-tile"><span class="eyebrow">Reels</span><b>{len(reels)}</b></div>
+          <div class="cms-stat-tile"><span class="eyebrow">Published</span><b>{published}</b></div>
+          <div class="cms-stat-tile"><span class="eyebrow">Home slots</span><b>{homepage_slots}</b></div>
+        </div>
       </section>
-      <aside class="panel glass">
-        <div class="eyebrow">(Upload) - Home Reel Video</div>
-        <h2>Reel Slot</h2>
-        {reel_form()}
-        <div style="height:20px"></div>
-        <a class="pill primary" href="/reels">Preview Reels</a>
-        <a class="pill" href="/#reels">Preview Home</a>
-      </aside>
+      <section class="reels-cms-layout">
+        <div class="reel-card-grid">{''.join(cards) or '<div class="empty-state">No reels yet. Upload the first homepage video from the panel on the right.</div>'}</div>
+        <aside class="panel glass new-reel-panel">
+          <div class="eyebrow">(Upload) - Home Reel Video</div>
+          <h2>New Reel</h2>
+          <p>Upload a local video, paste a YouTube link, or add a Drive poster. The first three published reels are used on the homepage.</p>
+          {reel_form()}
+          <div class="cms-actions" style="margin-top:14px"><a class="pill primary" href="/reels">Preview Reels</a><a class="pill" href="/#reels">Preview Home</a></div>
+        </aside>
+      </section>
     </main>"""
     return page_shell("Reels CMS - Anamorph", body)
 
