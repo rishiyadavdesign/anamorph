@@ -258,12 +258,29 @@ function homeForm(home = {}) {
   return `<form method="post" action="/admin/home" enctype="multipart/form-data"><label>Home text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">${escapeHtml(pairsToText(home.text_replacements || []))}</textarea></label><label>Home image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">${escapeHtml(pairsToText(home.image_replacements || []))}</textarea></label><div class="row"><label>Replace this image URL<input name="image_target" placeholder="Paste current home image URL"></label><label>With Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label></div><label>Or upload replacement image<input type="file" name="image" accept="image/*"></label><input type="submit" value="Update home page"></form>`;
 }
 
+function adminNav(active = "") {
+  const pill = (href, label, key) => `<a class="pill ${active === key ? "primary" : ""}" href="${href}">${label}</a>`;
+  return `<header class="topbar"><div class="wrap"><a class="brand" href="/admin">CMS</a><nav class="nav">${pill("/admin/home", "Home CMS", "home")}${pill("/admin/work", "Work CMS", "work")}${pill("/admin/reels", "Reels CMS", "reels")}<a class="pill" href="/">Site</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>`;
+}
+
 function adminPage(data) {
+  return shell("Anamorph CMS", `${adminNav()}<main class="wrap"><section class="opening"><div class="time-grid"><div class="time-tick"><span>HOME</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>WORK</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>REELS</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div></div><div class="wrap"><h1 class="opening-copy"><span class="reveal-word">CMS</span> <span class="reveal-word">Control</span><br><span class="reveal-word reveal-muted">choose</span> <span class="reveal-word reveal-muted">a</span> <span class="reveal-word reveal-muted">page</span></h1><div class="work-count"><b>${(data.projects || []).length} Projects - ${(data.reels || []).length} Reels</b><span>ANAMORPH CMS</span></div></div></section><section class="section-head"><div><div class="eyebrow">(CMS) - Sections</div><h2>Edit Pages</h2></div></section><section class="grid" style="padding:28px 0 120px"><a class="panel glass" href="/admin/home"><div class="eyebrow">Home Page</div><h2>Home CMS</h2><p>Change homepage text, images, and original Framer content replacements.</p></a><a class="panel glass" href="/admin/work"><div class="eyebrow">Projects</div><h2>Work CMS</h2><p>Add, edit, publish, and delete project pages.</p></a><a class="panel glass" href="/admin/reels"><div class="eyebrow">Homepage Videos</div><h2>Reels CMS</h2><p>Change the first three homepage reel videos and the reels page.</p></a></section></main>`);
+}
+
+function adminHomePage(data) {
+  return shell("Home CMS - Anamorph", `${adminNav("home")}<main class="wrap admin-grid"><section><div class="eyebrow">(CMS) - Home Page</div><h2>Home Content</h2><p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p><div class="panel">${homeForm(data.home || {})}</div></section><aside class="panel glass"><div class="eyebrow">(Preview)</div><h2>Home</h2><p>Use text replacement rows for copy and image replacement rows for visual assets.</p><a class="pill primary" href="/">Open Home</a><a class="pill" href="/#reels">Home Reels</a></aside></main>`);
+}
+
+function adminWorkPage(data) {
   const items = (data.projects || []).map((p) => `<div class="item"><img src="${escapeHtml(p.image)}" alt=""><div><strong>${escapeHtml(p.title)}</strong><p>/${escapeHtml(p.slug)} - ${escapeHtml(p.year)} - ${p.published === false ? "Draft" : "Published"}</p><a class="pill" href="/work/${escapeHtml(p.slug)}">Preview</a></div><form method="post" action="/admin/projects/delete" onsubmit="return confirm('Delete this project?')"><input type="hidden" name="id" value="${escapeHtml(p.id)}"><button class="danger">Delete</button></form></div>`).join("");
   const edits = (data.projects || []).map((p) => `<details><summary>Edit ${escapeHtml(p.title)}</summary>${projectForm(p)}</details>`).join("");
+  return shell("Work CMS - Anamorph", `${adminNav("work")}<main class="wrap admin-grid"><section><div class="eyebrow">(CMS) - Work Page</div><h2>Projects</h2><p>Change project pages, posters, videos, copy, and publish state.</p><div class="list">${items || "<p>No projects yet.</p>"}</div><div style="margin-top:24px">${edits}</div></section><aside class="panel glass"><div class="eyebrow">(Upload) - New Case</div><h2>Project</h2>${projectForm()}</aside></main>`);
+}
+
+function adminReelsPage(data) {
   const reelItems = (data.reels || []).map((r) => `<div class="item"><img src="${escapeHtml(r.image)}" alt=""><div><strong>${escapeHtml(r.title)}</strong><p>/${escapeHtml(r.slug)} - ${escapeHtml(r.duration)} - ${r.published === false ? "Draft" : "Published"}</p><a class="pill" href="/reels">Preview</a></div><form method="post" action="/admin/reels/delete" onsubmit="return confirm('Delete this reel?')"><input type="hidden" name="id" value="${escapeHtml(r.id)}"><button class="danger">Delete</button></form></div>`).join("");
   const reelEdits = (data.reels || []).map((r) => `<details><summary>Edit ${escapeHtml(r.title)}</summary>${reelForm(r)}</details>`).join("");
-  return shell("Anamorph CMS", `<header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header><main class="wrap admin-grid"><section><div class="eyebrow">(CMS) - Home Page</div><h2>Home Content</h2><p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p><div class="panel">${homeForm(data.home || {})}</div><div class="eyebrow" style="margin-top:28px">(CMS) - Local Content</div><h2>Projects</h2><p>Change project pages, posters, videos, copy, and publish state.</p><div class="list">${items || "<p>No projects yet.</p>"}</div><div style="margin-top:24px">${edits}</div><div class="section-head"><div><div class="eyebrow">(CMS) - Home Reels</div><h2>Homepage Videos</h2></div></div><p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p><div class="list">${reelItems || "<p>No reels yet.</p>"}</div><div style="margin-top:24px">${reelEdits}</div></section><aside class="panel glass"><div class="eyebrow">(Upload) - New Case</div><h2>Project</h2>${projectForm()}<div style="height:30px"></div><div class="eyebrow">(Upload) - Home Reel Video</div><h2>Reel Slot</h2>${reelForm()}</aside></main>`);
+  return shell("Reels CMS - Anamorph", `${adminNav("reels")}<main class="wrap admin-grid"><section><div class="eyebrow">(CMS) - Home Reels</div><h2>Homepage Videos</h2><p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p><div class="list">${reelItems || "<p>No reels yet.</p>"}</div><div style="margin-top:24px">${reelEdits}</div></section><aside class="panel glass"><div class="eyebrow">(Upload) - Home Reel Video</div><h2>Reel Slot</h2>${reelForm()}<div style="height:20px"></div><a class="pill primary" href="/reels">Preview Reels</a><a class="pill" href="/#reels">Preview Home</a></aside></main>`);
 }
 
 function send(res, status, body, type = "text/html; charset=utf-8") {
@@ -340,7 +357,7 @@ async function saveProject(req, res) {
     if (existing) Object.assign(existing, project);
     else data.projects.unshift(project);
     await saveCms(data);
-    redirect(res, "/admin");
+    redirect(res, "/admin/work");
   } catch (error) {
     send(res, 400, shell("CMS Error", `<main class="login"><section class="panel glass"><h1>Error</h1><p>${escapeHtml(error.message)}</p><a class="pill" href="/admin">Back</a></section></main>`));
   }
@@ -376,7 +393,7 @@ async function saveReel(req, res) {
     if (existing) Object.assign(existing, reel);
     else data.reels.unshift(reel);
     await saveCms(data);
-    redirect(res, "/admin");
+    redirect(res, "/admin/reels");
   } catch (error) {
     send(res, 400, shell("CMS Error", `<main class="login"><section class="panel glass"><h1>Error</h1><p>${escapeHtml(error.message)}</p><a class="pill" href="/admin">Back</a></section></main>`));
   }
@@ -400,7 +417,7 @@ async function saveHome(req, res) {
     }
     data.home = home;
     await saveCms(data);
-    redirect(res, "/admin");
+    redirect(res, "/admin/home");
   } catch (error) {
     send(res, 400, shell("CMS Error", `<main class="login"><section class="panel glass"><h1>Error</h1><p>${escapeHtml(error.message)}</p><a class="pill" href="/admin">Back</a></section></main>`));
   }
@@ -412,7 +429,7 @@ async function deleteProject(req, res) {
   const id = first(fields.id);
   data.projects = (data.projects || []).filter((p) => p.id !== id);
   await saveCms(data);
-  redirect(res, "/admin");
+  redirect(res, "/admin/work");
 }
 
 async function deleteReel(req, res) {
@@ -421,7 +438,7 @@ async function deleteReel(req, res) {
   const id = first(fields.id);
   data.reels = (data.reels || []).filter((r) => r.id !== id);
   await saveCms(data);
-  redirect(res, "/admin");
+  redirect(res, "/admin/reels");
 }
 
 module.exports = async function handler(req, res) {
@@ -455,6 +472,9 @@ module.exports = async function handler(req, res) {
   if (req.method === "GET" && pathname === "/api/home") return send(res, 200, JSON.stringify({ home: publicHome(data) }), "application/json; charset=utf-8");
   if (req.method === "GET" && pathname === "/login") return send(res, 200, loginPage());
   if (req.method === "GET" && pathname === "/admin") return loggedIn ? send(res, 200, adminPage(data)) : redirect(res, "/login");
+  if (req.method === "GET" && pathname === "/admin/home") return loggedIn ? send(res, 200, adminHomePage(data)) : redirect(res, "/login");
+  if (req.method === "GET" && pathname === "/admin/work") return loggedIn ? send(res, 200, adminWorkPage(data)) : redirect(res, "/login");
+  if (req.method === "GET" && pathname === "/admin/reels") return loggedIn ? send(res, 200, adminReelsPage(data)) : redirect(res, "/login");
   if (req.method === "POST" && pathname === "/admin/home") return loggedIn ? saveHome(req, res) : redirect(res, "/login");
   if (req.method === "POST" && pathname === "/admin/projects") return loggedIn ? saveProject(req, res) : redirect(res, "/login");
   if (req.method === "POST" && pathname === "/admin/projects/delete") return loggedIn ? deleteProject(req, res) : redirect(res, "/login");

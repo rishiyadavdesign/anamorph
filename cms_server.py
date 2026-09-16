@@ -550,7 +550,58 @@ def home_form(home=None):
     </form>"""
 
 
+def admin_nav(active=""):
+    def pill(href, label, key):
+        primary = " primary" if active == key else ""
+        return f'<a class="pill{primary}" href="{href}">{label}</a>'
+    return f"""<header class="topbar"><div class="wrap"><a class="brand" href="/admin">CMS</a><nav class="nav">{pill('/admin/home', 'Home CMS', 'home')}{pill('/admin/work', 'Work CMS', 'work')}{pill('/admin/reels', 'Reels CMS', 'reels')}<a class="pill" href="/">Site</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>"""
+
+
 def admin_html():
+    data = load_cms()
+    body = f"""
+    {admin_nav()}
+    <main class="wrap">
+      <section class="opening">
+        <div class="time-grid"><div class="time-tick"><span>HOME</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>WORK</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>REELS</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div></div>
+        <div class="wrap">
+          <h1 class="opening-copy"><span class="reveal-word">CMS</span> <span class="reveal-word">Control</span><br><span class="reveal-word reveal-muted">choose</span> <span class="reveal-word reveal-muted">a</span> <span class="reveal-word reveal-muted">page</span></h1>
+          <div class="work-count"><b>{len(data.get('projects', []))} Projects - {len(data.get('reels', []))} Reels</b><span>ANAMORPH CMS</span></div>
+        </div>
+      </section>
+      <section class="section-head"><div><div class="eyebrow">(CMS) - Sections</div><h2>Edit Pages</h2></div></section>
+      <section class="grid" style="padding:28px 0 120px">
+        <a class="panel glass" href="/admin/home"><div class="eyebrow">Home Page</div><h2>Home CMS</h2><p>Change homepage text, images, and original Framer content replacements.</p></a>
+        <a class="panel glass" href="/admin/work"><div class="eyebrow">Projects</div><h2>Work CMS</h2><p>Add, edit, publish, and delete project pages.</p></a>
+        <a class="panel glass" href="/admin/reels"><div class="eyebrow">Homepage Videos</div><h2>Reels CMS</h2><p>Change the first three homepage reel videos and the reels page.</p></a>
+      </section>
+    </main>"""
+    return page_shell("Anamorph CMS", body)
+
+
+def admin_home_html():
+    data = load_cms()
+    body = f"""
+    {admin_nav('home')}
+    <main class="wrap admin-grid">
+      <section>
+        <div class="eyebrow">(CMS) - Home Page</div>
+        <h2>Home Content</h2>
+        <p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p>
+        <div class="panel">{home_form(data.get('home', {}))}</div>
+      </section>
+      <aside class="panel glass">
+        <div class="eyebrow">(Preview)</div>
+        <h2>Home</h2>
+        <p>Use text replacement rows for copy and image replacement rows for visual assets.</p>
+        <a class="pill primary" href="/">Open Home</a>
+        <a class="pill" href="/#reels">Home Reels</a>
+      </aside>
+    </main>"""
+    return page_shell("Home CMS - Anamorph", body)
+
+
+def admin_work_html():
     data = load_cms()
     items = []
     for p in data["projects"]:
@@ -565,6 +616,27 @@ def admin_html():
           </form>
         </div>""")
     edit_forms = "".join(f"<details><summary>Edit {escape(p.get('title'))}</summary>{project_form(p)}</details>" for p in data["projects"])
+    body = f"""
+    {admin_nav('work')}
+    <main class="wrap admin-grid">
+      <section>
+        <div class="eyebrow">(CMS) - Work Page</div>
+        <h2>Projects</h2>
+        <p>Change project pages, posters, videos, copy, and publish state.</p>
+        <div class="list">{''.join(items) or '<p>No projects yet.</p>'}</div>
+        <div style="margin-top:24px">{edit_forms}</div>
+      </section>
+      <aside class="panel glass">
+        <div class="eyebrow">(Upload) - New Case</div>
+        <h2>Project</h2>
+        {project_form()}
+      </aside>
+    </main>"""
+    return page_shell("Work CMS - Anamorph", body)
+
+
+def admin_reels_html():
+    data = load_cms()
     reel_items = []
     for r in data.get("reels", []):
         status = "Published" if r.get("published", True) else "Draft"
@@ -579,34 +651,25 @@ def admin_html():
         </div>""")
     reel_edit_forms = "".join(f"<details><summary>Edit {escape(r.get('title'))}</summary>{reel_form(r)}</details>" for r in data.get("reels", []))
     body = f"""
-    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
+    {admin_nav('reels')}
     <main class="wrap admin-grid">
       <section>
-        <div class="eyebrow">(CMS) - Home Page</div>
-        <h2>Home Content</h2>
-        <p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p>
-        <div class="panel">{home_form(data.get('home', {}))}</div>
-        <div class="eyebrow" style="margin-top:28px">(CMS) - Local Content</div>
-        <h2>Projects</h2>
-        <p>All images, videos, and project records are stored locally. Uploads are written into the workspace and served by this CMS server.</p>
-        <div class="list">{''.join(items) or '<p>No projects yet.</p>'}</div>
-        <div style="margin-top:24px">{edit_forms}</div>
-        <div class="section-head"><div><div class="eyebrow">(CMS) - Home Reels</div><h2>Homepage Videos</h2></div></div>
+        <div class="eyebrow">(CMS) - Home Reels</div>
+        <h2>Homepage Videos</h2>
         <p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p>
         <div class="list">{''.join(reel_items) or '<p>No reels yet.</p>'}</div>
         <div style="margin-top:24px">{reel_edit_forms}</div>
       </section>
       <aside class="panel glass">
-        <div class="eyebrow">(Upload) - New Case</div>
-        <h2>Project</h2>
-        {project_form()}
-        <div style="height:30px"></div>
         <div class="eyebrow">(Upload) - Home Reel Video</div>
         <h2>Reel Slot</h2>
         {reel_form()}
+        <div style="height:20px"></div>
+        <a class="pill primary" href="/reels">Preview Reels</a>
+        <a class="pill" href="/#reels">Preview Home</a>
       </aside>
     </main>"""
-    return page_shell("Anamorph CMS", body)
+    return page_shell("Reels CMS - Anamorph", body)
 
 
 def read_field(form, name, default=""):
@@ -670,6 +733,18 @@ class CMSHandler(SimpleHTTPRequestHandler):
             if not self.is_logged_in():
                 return self.redirect("/login")
             return self.send_html(admin_html())
+        if path == "/admin/home":
+            if not self.is_logged_in():
+                return self.redirect("/login")
+            return self.send_html(admin_home_html())
+        if path == "/admin/work":
+            if not self.is_logged_in():
+                return self.redirect("/login")
+            return self.send_html(admin_work_html())
+        if path == "/admin/reels":
+            if not self.is_logged_in():
+                return self.redirect("/login")
+            return self.send_html(admin_reels_html())
         if path == "/api/projects":
             return self.send_json({"projects": public_projects()})
         if path == "/api/reels":
@@ -774,7 +849,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
             else:
                 data["projects"].insert(0, project)
             save_cms(data)
-            return self.redirect("/admin")
+            return self.redirect("/admin/work")
         except Exception as exc:
             return self.send_html(page_shell("CMS Error", f"<main class='login'><section class='panel'><h1>Error</h1><p>{escape(exc)}</p><a class='pill' href='/admin'>Back</a></section></main>"), HTTPStatus.BAD_REQUEST)
 
@@ -795,7 +870,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
                 home["image_replacements"].append({"from": target, "to": replacement})
             data["home"] = home
             save_cms(data)
-            return self.redirect("/admin")
+            return self.redirect("/admin/home")
         except Exception as exc:
             return self.send_html(page_shell("CMS Error", f"<main class='login'><section class='panel'><h1>Error</h1><p>{escape(exc)}</p><a class='pill' href='/admin'>Back</a></section></main>"), HTTPStatus.BAD_REQUEST)
 
@@ -806,7 +881,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
         data = load_cms()
         data["projects"] = [p for p in data["projects"] if p.get("id") != project_id]
         save_cms(data)
-        return self.redirect("/admin")
+        return self.redirect("/admin/work")
 
     def save_reel(self):
         try:
@@ -846,7 +921,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
             else:
                 data["reels"].insert(0, reel)
             save_cms(data)
-            return self.redirect("/admin")
+            return self.redirect("/admin/reels")
         except Exception as exc:
             return self.send_html(page_shell("CMS Error", f"<main class='login'><section class='panel'><h1>Error</h1><p>{escape(exc)}</p><a class='pill' href='/admin'>Back</a></section></main>"), HTTPStatus.BAD_REQUEST)
 
@@ -857,7 +932,7 @@ class CMSHandler(SimpleHTTPRequestHandler):
         data = load_cms()
         data["reels"] = [r for r in data.get("reels", []) if r.get("id") != reel_id]
         save_cms(data)
-        return self.redirect("/admin")
+        return self.redirect("/admin/reels")
 
 
 def main():
