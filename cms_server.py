@@ -293,6 +293,15 @@ def page_shell(title, body, extra_head=""):
     .section-head {{ display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 20px; padding: 88px 0 22px; border-bottom: 1px solid var(--line); }}
     .work-count {{ display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }}
     .work-count b {{ font-weight: 400; color: var(--paper); }}
+    .work-screening-poster {{ position: absolute; inset: 0; opacity: .42; transform: scale(1.04); animation: posterIn 2.4s cubic-bezier(.16,1,.3,1) both; }}
+    .work-screening-poster img, .work-screening-poster video {{ width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.82) contrast(1.08); }}
+    .work-screening-grade {{ position: absolute; inset: 0; background: radial-gradient(circle at 50% 38%, transparent 0 26%, rgba(10,10,10,.48) 64%), linear-gradient(180deg, rgba(10,10,10,.2), rgba(10,10,10,.92)); pointer-events: none; }}
+    .rec-badge {{ display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }}
+    .rec-badge:before {{ content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 18px rgba(219,57,3,.8); }}
+    .work-spec-strip {{ display: grid; grid-template-columns: repeat(4,1fr); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); margin-top: 22px; }}
+    .work-spec-cell {{ min-height: 112px; border-left: 1px solid var(--line); padding: 14px; }}
+    .work-spec-cell:last-child {{ border-right: 1px solid var(--line); }}
+    .work-spec-cell strong {{ display: block; font-size: clamp(28px,4vw,56px); line-height: .92; letter-spacing: -.07em; font-weight: 400; color: var(--paper); margin-top: 18px; }}
     .work-list {{ padding: 0 0 112px; }}
     .work-row {{ display: grid; grid-template-columns: 70px minmax(210px,1fr) minmax(230px,.9fr) 110px minmax(180px,.75fr); gap: 20px; align-items: center; min-height: 148px; border-bottom: 1px solid var(--line); position: relative; overflow: hidden; animation: riseIn 1.2s cubic-bezier(.16,1,.3,1) both; }}
     .work-row:hover {{ border-color: rgba(244,242,237,.22); }}
@@ -374,7 +383,7 @@ def page_shell(title, body, extra_head=""):
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
+    @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
 </head>
@@ -384,6 +393,11 @@ def page_shell(title, body, extra_head=""):
 
 def work_index_html():
     projects = public_projects()
+    featured = projects[0] if projects else {}
+    if featured.get("video"):
+        hero_media = f'<video src="{escape(featured.get("video"))}" poster="{escape(featured.get("image"))}" autoplay muted loop playsinline></video>'
+    else:
+        hero_media = f'<img src="{escape(featured.get("image") or "/assets/local/323795fc9c20f1ac.png")}" alt="">'
     rows = []
     for index, project in enumerate(projects, 1):
         img = escape(project.get("image"))
@@ -400,15 +414,19 @@ def work_index_html():
     <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill primary" href="/work">Work</a><a class="pill" href="/admin">CMS</a></nav></div></header>
     <main>
       <section class="opening">
+        <div class="work-screening-poster">{hero_media}</div>
+        <div class="work-screening-grade"></div>
         <div class="time-grid"><div class="time-tick"><span>00:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:30</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>01:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>01:30</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>02:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div></div>
         <div class="wrap">
-          <h1 class="opening-copy"><span class="reveal-word">Everything</span> <span class="reveal-word">that</span> <span class="reveal-word">left</span><br><span class="reveal-word reveal-muted">this</span> <span class="reveal-word reveal-muted">room</span> <span class="reveal-word reveal-muted">cut</span> <span class="reveal-word reveal-muted">by</span> <span class="reveal-word reveal-muted">cut</span></h1>
+          <div class="rec-badge">REC SELECTED WORK</div>
+          <h1 class="opening-copy"><span class="reveal-word">Selected</span> <span class="reveal-word">work</span><br><span class="reveal-word reveal-muted">cut</span> <span class="reveal-word reveal-muted">like</span> <span class="reveal-word reveal-muted">a</span> <span class="reveal-word reveal-muted">screening</span></h1>
           <div class="work-count"><b>{len(projects)} Films - 2025-2026</b><span>00:02:00:00</span></div>
+          <div class="work-spec-strip"><div class="work-spec-cell"><span class="eyebrow">Featured</span><strong>{escape(featured.get('title', 'Project'))}</strong></div><div class="work-spec-cell"><span class="eyebrow">Discipline</span><strong>{escape(featured.get('discipline', 'Film'))}</strong></div><div class="work-spec-cell"><span class="eyebrow">Latest Year</span><strong>{escape(featured.get('year', '2026'))}</strong></div><div class="work-spec-cell"><span class="eyebrow">Archive</span><strong>{len(projects)}</strong></div></div>
         </div>
       </section>
-      <section class="wrap section-head"><div><div class="eyebrow">(02) - All Work</div><h2>Selected Work</h2></div><a class="pill primary" href="/admin">Upload Project</a></section>
+      <section class="wrap section-head"><div><div class="eyebrow">(02) - All Work</div><h2>Screenings</h2></div><a class="pill primary" href="/admin/work">Upload Project</a></section>
       <section class="wrap work-list">{''.join(rows) or '<p>No projects published yet.</p>'}</section>
-      <section class="wrap next-link"><div><div class="eyebrow">(03) - Booking</div><h2>Let's roll</h2></div><a class="pill primary" href="/admin">Add Work</a></section>
+      <section class="wrap next-link"><div><div class="eyebrow">(03) - Booking</div><h2>Let's roll</h2></div><a class="pill primary" href="/admin/work">Add Work</a></section>
     </main>"""
     return page_shell("Selected Work - Anamorph", body)
 
