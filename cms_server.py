@@ -20,6 +20,7 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 ROOT = Path(__file__).resolve().parent
 DATA_FILE = ROOT / "data" / "cms.json"
 SECRET_FILE = ROOT / "data" / ".cms_secret"
+WORK_DETAIL_TEMPLATE = ROOT / "templates" / "work-detail-framer.html"
 UPLOAD_DIR = ROOT / "uploads"
 IMAGE_DIR = UPLOAD_DIR / "images"
 VIDEO_DIR = UPLOAD_DIR / "videos"
@@ -438,7 +439,40 @@ def reels_html():
     return page_shell("Reels - Anamorph", body)
 
 
+def work_detail_template_html(project):
+    if not WORK_DETAIL_TEMPLATE.exists():
+        return ""
+    projects = public_projects()
+    next_item = next_project(projects, project.get("slug")) or {}
+    output = WORK_DETAIL_TEMPLATE.read_text(errors="ignore")
+    replacements = [
+        ("Citadel", next_item.get("title", "Selected Work")),
+        ("citadel", next_item.get("slug", "work")),
+        ("Meridian — Anamorph™", f"{project.get('title') or 'Project'} — Anamorph™"),
+        ("Meridian", project.get("title", "")),
+        ("Brand Identity", project.get("discipline", "")),
+        (">2026<", f">{escape(project.get('year', ''))}<"),
+        ("Identity &amp; Launch Film", escape(project.get("project", ""))),
+        ("Atlas Group", project.get("client", "")),
+        ("RED Komodo 4K 24p", project.get("spec", "")),
+        ("Master and Six Cutdowns", project.get("deliverables", "")),
+        ("https://framerusercontent.com/assets/giTLgTG1Xb4gSWKMSMwml7NXZw.mp4", project.get("video") or project.get("image") or ""),
+        ("https://www.youtube.com/watch?v=Sgxbx65IDeM", project.get("video", "")),
+    ]
+    for old, new in replacements:
+        output = output.replace(old, str(new or ""))
+    story = escape(project.get("story") or "A cinematic project shaped around pace, texture, and retention.")
+    output = output.replace("A new identity needed a film that could carry it — sixty days from first board to launch, and a name the market hadn’t heard yet.", story)
+    output = output.replace("We cut to the grade, not around it. Two-frame holds on the wordmark, hard cuts on the beat, nothing that lingers. The launch version ran 02:14; the boardroom sat through it twice.", "We cut to the grade, not around it. Holds, hard cuts, texture, and rhythm stay locked to the idea.")
+    output = output.replace("Lifted blacks and one warm accent pulled from the wordmark. The whole film sits inside the brand palette before the logo ever appears.", "Lifted blacks, restrained contrast, and one warm accent keep the whole film inside the brand palette.")
+    output = output.replace("The film opened the launch event and ran paid for six weeks. Average watch time held above ninety per cent.", "The film was finished for launch with social cutdowns, title work, and delivery-ready masters.")
+    return output
+
+
 def project_html(project):
+    templated = work_detail_template_html(project)
+    if templated:
+        return templated
     projects = public_projects()
     next_item = next_project(projects, project.get("slug")) or {}
     hero_media = media_html(project, "hero")

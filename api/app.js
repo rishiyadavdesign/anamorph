@@ -5,6 +5,7 @@ const formidable = require("formidable");
 
 const ROOT = path.join(__dirname, "..");
 const SEED_FILE = path.join(ROOT, "data", "cms.json");
+const WORK_DETAIL_TEMPLATE = path.join(ROOT, "templates", "work-detail-framer.html");
 const CMS_USER = process.env.CMS_USER || "admin";
 const CMS_PASSWORD = process.env.CMS_PASSWORD || "admin123";
 const SESSION_SECRET = process.env.SESSION_SECRET || "anamorph-local-session-secret";
@@ -20,6 +21,10 @@ function escapeHtml(value = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function escapeAttr(value = "") {
+  return escapeHtml(value).replace(/`/g, "&#96;");
 }
 
 function youtubeId(value = "") {
@@ -239,7 +244,47 @@ function reelsPage(reels) {
   return shell("Reels - Anamorph", `<header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill" href="/work">Work</a><a class="pill primary" href="/reels">Reels</a><a class="pill" href="/admin">CMS</a></nav></div></header><main><section class="opening"><div class="time-grid"><div class="time-tick"><span>00:00</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:07</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:15</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:30</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div><div class="time-tick"><span>00:45</span><span class="rule"></span><span class="plus">+</span><span class="rule"></span></div></div><div class="wrap"><h1 class="opening-copy"><span class="reveal-word">Short-form</span> <span class="reveal-word">cuts</span><br><span class="reveal-word reveal-muted">built</span> <span class="reveal-word reveal-muted">to</span> <span class="reveal-word reveal-muted">hold</span> <span class="reveal-word reveal-muted">attention</span></h1><div class="work-count"><b>${reels.length} Reels - Motion CMS</b><span>00:00:45:00</span></div></div></section><section class="wrap section-head"><div><div class="eyebrow">(01) - Reels</div><h2>Social Cuts</h2></div><a class="pill primary" href="/admin">Upload Reel</a></section><section class="wrap reel-grid">${cards || "<p>No reels published yet.</p>"}</section></main>`);
 }
 
+function workDetailTemplatePage(project, projects = []) {
+  if (!fs.existsSync(WORK_DETAIL_TEMPLATE)) return "";
+  const next = nextProject(projects, project.slug) || {};
+  let html = fs.readFileSync(WORK_DETAIL_TEMPLATE, "utf8");
+  const replacements = [
+    ["Citadel", next.title || "Selected Work"],
+    ["citadel", next.slug || "work"],
+    ["Meridian — Anamorph™", `${project.title || "Project"} — Anamorph™`],
+    ["Meridian", project.title || ""],
+    ["Brand Identity", project.discipline || ""],
+    [">2026<", `>${escapeHtml(project.year || "")}<`],
+    ["Identity &amp; Launch Film", escapeHtml(project.project || "")],
+    ["Atlas Group", project.client || ""],
+    ["RED Komodo 4K 24p", project.spec || ""],
+    ["Master and Six Cutdowns", project.deliverables || ""],
+    ["https://framerusercontent.com/assets/giTLgTG1Xb4gSWKMSMwml7NXZw.mp4", project.video || project.image || ""],
+    ["https://www.youtube.com/watch?v=Sgxbx65IDeM", project.video || ""]
+  ];
+  replacements.forEach(([from, to]) => {
+    html = html.split(from).join(String(to || ""));
+  });
+  const story = escapeHtml(project.story || "A cinematic project shaped around pace, texture, and retention.");
+  html = html
+    .replace("A new identity needed a film that could carry it — sixty days from first board to launch, and a name the market hadn’t heard yet.", story)
+    .replace("We cut to the grade, not around it. Two-frame holds on the wordmark, hard cuts on the beat, nothing that lingers. The launch version ran 02:14; the boardroom sat through it twice.", "We cut to the grade, not around it. Holds, hard cuts, texture, and rhythm stay locked to the idea.")
+    .replace("Lifted blacks and one warm accent pulled from the wordmark. The whole film sits inside the brand palette before the logo ever appears.", "Lifted blacks, restrained contrast, and one warm accent keep the whole film inside the brand palette.")
+    .replace("The film opened the launch event and ran paid for six weeks. Average watch time held above ninety per cent.", "The film was finished for launch with social cutdowns, title work, and delivery-ready masters.");
+  html = html.replace("</body>", `<script>window.__ANAMORPH_PROJECT__=${JSON.stringify({
+    title: project.title || "",
+    slug: project.slug || "",
+    image: project.image || "",
+    video: project.video || "",
+    nextSlug: next.slug || "",
+    nextTitle: next.title || ""
+  })};</script></body>`);
+  return html;
+}
+
 function projectPage(project, projects = []) {
+  const templated = workDetailTemplatePage(project, projects);
+  if (templated) return templated;
   const next = nextProject(projects, project.slug) || {};
   const heroMedia = mediaHtml(project, "hero");
   const media = mediaHtml(project, "detail");
