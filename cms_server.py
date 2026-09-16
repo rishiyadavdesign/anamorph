@@ -426,9 +426,12 @@ def page_shell(title, body, extra_head=""):
     .project-card-actions form {{ display: block; margin-left: auto; }}
     .project-edit {{ margin-top: 0; padding: 0; background: transparent; border: 0; }}
     .project-edit summary {{ display: inline-flex; border: 1px solid var(--line); background: rgba(244,242,237,.06); border-radius: 999px; padding: 10px 14px; font-size: 13px; letter-spacing: -.05em; }}
-    .project-edit[open] {{ flex-basis: 100%; width: 100%; }}
-    .project-edit[open] summary {{ margin-bottom: 14px; background: rgba(244,242,237,.12); }}
-    .project-edit .cms-form-wrap {{ border-top: 1px solid var(--line); padding-top: 14px; }}
+    .project-edit[open] summary {{ background: rgba(244,242,237,.12); }}
+    .project-edit[open]::before {{ content: ""; position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,.72); backdrop-filter: blur(16px); }}
+    .project-edit .cms-form-wrap {{ position: fixed; left: 50%; top: 50%; z-index: 90; width: min(780px, calc(100vw - 32px)); max-height: min(820px, calc(100vh - 32px)); overflow: auto; transform: translate(-50%, -50%); border: 1px solid rgba(244,242,237,.18); background: rgba(10,10,10,.94); box-shadow: 0 30px 100px rgba(0,0,0,.58); padding: 18px; }}
+    .modal-head {{ display: flex; align-items: end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 14px; }}
+    .modal-head h3 {{ font-weight: 400; font-size: clamp(30px,5vw,58px); letter-spacing: -.07em; line-height: .9; margin: 0; }}
+    .modal-close {{ border-color: rgba(244,242,237,.2); background: rgba(244,242,237,.08); }}
     .new-project-panel {{ position: sticky; top: 24px; }}
     .empty-state {{ border: 1px solid var(--line); background: rgba(244,242,237,.035); padding: 24px; color: var(--muted); }}
     .admin-grid {{ display: grid; grid-template-columns: minmax(0, 1fr) 410px; gap: 24px; padding: 108px 0 70px; }}
@@ -454,6 +457,7 @@ def page_shell(title, body, extra_head=""):
     @media (prefers-reduced-motion: reduce) {{ *, *:before, *:after {{ animation: none !important; transition: none !important; }} }}
     @keyframes tickIn {{ from {{ opacity: .001; transform: translateY(120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
     @keyframes tickDown {{ from {{ opacity: .001; transform: translateY(-120px); }} to {{ opacity: 1; transform: translateY(0); }} }}
+    @media (max-width: 640px) {{ .work-cms, .home-cms, .reels-cms, .admin-grid {{ padding-top: 88px; }} .cms-stat-strip, .home-section-map, .timeline, .sheet, .stat-grid, .work-spec-strip {{ grid-template-columns: 1fr; }} .home-editor-panel, .home-tool-card, .home-element-browser, .panel {{ padding: 14px; }} .project-edit .cms-form-wrap {{ width: calc(100vw - 18px); max-height: calc(100vh - 18px); padding: 14px; }} .modal-head {{ align-items: center; }} .project-card-actions form {{ margin-left: 0; }} .cms-reel-media {{ aspect-ratio: 4 / 5; }} .topbar .wrap {{ overflow: auto; justify-content: flex-start; }} .nav {{ flex-wrap: nowrap; }} }}
     @media (max-width: 920px) {{ .topbar {{ bottom: 14px; }} .topbar .wrap {{ width: calc(100vw - 28px); justify-content: space-between; }} .hero-row, .grid, .split, .admin-grid, .reels-cms-hero, .reels-cms-layout, .reel-card-grid, .home-cms-hero, .home-studio-layout, .home-editor-grid, .home-element-grid, .saved-replacements, .work-cms-hero, .work-cms-layout, .project-card-grid, .row, .case-copy, .reel-grid, .cms-card-grid {{ grid-template-columns: 1fr; }} .reel-card {{ min-height: 420px; }} .copy-large {{ margin: 22px 0 0; text-align: left; }} .timeline, .sheet, .stat-grid, .work-spec-strip, .cms-stat-strip, .home-section-map {{ grid-template-columns: repeat(2, 1fr); }} .time-grid {{ grid-template-columns: repeat(3,1fr); }} .time-tick:nth-child(even) {{ display: none; }} .opening-copy {{ font-size: clamp(44px,13vw,78px); }} .work-row {{ grid-template-columns: 46px 1fr; gap: 10px; padding: 22px 0; }} .work-project, .work-year, .work-spec {{ grid-column: 2; }} .work-thumb {{ display: none; }} .item {{ grid-template-columns: 82px 1fr; }} .item form {{ grid-column: 1 / -1; }} h1 {{ font-size: clamp(62px, 24vw, 130px); }} }}
   </style>
   {extra_head}
@@ -979,7 +983,7 @@ def admin_work_html():
             </div>
             <div class="project-card-actions">
               <a class="pill primary" href="/work/{escape(p.get('slug', ''))}">Preview</a>
-              <details class="project-edit"><summary>Edit</summary><div class="cms-form-wrap">{project_form(p)}</div></details>
+              <details class="project-edit"><summary>Edit</summary><div class="cms-form-wrap"><div class="modal-head"><div><div class="eyebrow">Edit Project</div><h3>{escape(p.get('title') or 'Project')}</h3></div><button class="modal-close" type="button" onclick="this.closest('details').open=false">Close</button></div>{project_form(p)}</div></details>
               <form method="post" action="/admin/projects/delete" onsubmit="return confirm('Delete this project?')">
                 <input type="hidden" name="id" value="{escape(p.get('id', ''))}">
                 <button class="danger">Delete</button>
@@ -1038,7 +1042,7 @@ def admin_reels_html():
             <div class="project-meta"><span>{escape(r.get('duration') or '00:15')}</span><span>{escape(r.get('format') or '9:16 Reel')}</span></div>
             <div class="project-card-actions">
               <a class="pill primary" href="/reels">Preview</a>
-              <details class="project-edit"><summary>Edit</summary><div class="cms-form-wrap">{reel_form(r)}</div></details>
+              <details class="project-edit"><summary>Edit</summary><div class="cms-form-wrap"><div class="modal-head"><div><div class="eyebrow">Edit Reel</div><h3>{escape(r.get('title') or 'Reel')}</h3></div><button class="modal-close" type="button" onclick="this.closest('details').open=false">Close</button></div>{reel_form(r)}</div></details>
               <form method="post" action="/admin/reels/delete" onsubmit="return confirm('Delete this reel?')">
                 <input type="hidden" name="id" value="{escape(r.get('id', ''))}">
                 <button class="danger">Delete</button>
