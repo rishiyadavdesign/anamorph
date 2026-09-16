@@ -52,6 +52,7 @@ def load_cms():
         data = json.load(f)
     data.setdefault("projects", [])
     data.setdefault("reels", [])
+    data.setdefault("home", {"text_replacements": [], "image_replacements": []})
     return data
 
 
@@ -85,6 +86,35 @@ def public_projects():
 def public_reels():
     reels = [r for r in load_cms().get("reels", []) if r.get("published", True)]
     return sorted(reels, key=lambda r: r.get("created_at", ""), reverse=True)
+
+
+def public_home():
+    home = load_cms().get("home", {})
+    return {
+        "text_replacements": home.get("text_replacements", []) if isinstance(home.get("text_replacements", []), list) else [],
+        "image_replacements": home.get("image_replacements", []) if isinstance(home.get("image_replacements", []), list) else [],
+    }
+
+
+def pairs_to_text(pairs):
+    return "\n".join(f"{pair.get('from', '')} => {pair.get('to', '')}" for pair in pairs or [])
+
+
+def text_to_pairs(value):
+    pairs = []
+    for line in str(value or "").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        separator = "=>" if "=>" in stripped else "|"
+        if separator not in stripped:
+            continue
+        old, new = stripped.split(separator, 1)
+        old = old.strip()
+        new = new.strip()
+        if old and new:
+            pairs.append({"from": old, "to": new})
+    return pairs
 
 
 def find_project(slug):
@@ -505,6 +535,21 @@ def reel_form(reel=None):
     </form>"""
 
 
+def home_form(home=None):
+    h = home or {}
+    return f"""
+    <form method="post" action="/admin/home" enctype="multipart/form-data">
+      <label>Home text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">{escape(pairs_to_text(h.get('text_replacements', [])))}</textarea></label>
+      <label>Home image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">{escape(pairs_to_text(h.get('image_replacements', [])))}</textarea></label>
+      <div class="row">
+        <label>Replace this image URL<input name="image_target" placeholder="Paste current home image URL"></label>
+        <label>With Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label>
+      </div>
+      <label>Or upload replacement image<input type="file" name="image" accept="image/*"></label>
+      <input type="submit" value="Update home page">
+    </form>"""
+
+
 def admin_html():
     data = load_cms()
     items = []
@@ -534,10 +579,14 @@ def admin_html():
         </div>""")
     reel_edit_forms = "".join(f"<details><summary>Edit {escape(r.get('title'))}</summary>{reel_form(r)}</details>" for r in data.get("reels", []))
     body = f"""
-    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
+    <header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header>
     <main class="wrap admin-grid">
       <section>
-        <div class="eyebrow">(CMS) - Local Content</div>
+        <div class="eyebrow">(CMS) - Home Page</div>
+        <h2>Home Content</h2>
+        <p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p>
+        <div class="panel">{home_form(data.get('home', {}))}</div>
+        <div class="eyebrow" style="margin-top:28px">(CMS) - Local Content</div>
         <h2>Projects</h2>
         <p>All images, videos, and project records are stored locally. Uploads are written into the workspace and served by this CMS server.</p>
         <div class="list">{''.join(items) or '<p>No projects yet.</p>'}</div>
@@ -625,6 +674,8 @@ class CMSHandler(SimpleHTTPRequestHandler):
             return self.send_json({"projects": public_projects()})
         if path == "/api/reels":
             return self.send_json({"reels": public_reels()})
+        if path == "/api/home":
+            return self.send_json({"home": public_home()})
         if path == "/work":
             return self.send_html(work_index_html())
         if path == "/reels":
@@ -661,6 +712,8 @@ class CMSHandler(SimpleHTTPRequestHandler):
             return self.redirect("/login")
         if path == "/admin/projects":
             return self.save_project()
+        if path == "/admin/home":
+            return self.save_home()
         if path == "/admin/projects/delete":
             return self.delete_project()
         if path == "/admin/reels":
@@ -720,6 +773,27 @@ class CMSHandler(SimpleHTTPRequestHandler):
                 existing.update(project)
             else:
                 data["projects"].insert(0, project)
+            save_cms(data)
+            return self.redirect("/admin")
+        except Exception as exc:
+            return self.send_html(page_shell("CMS Error", f"<main class='login'><section class='panel'><h1>Error</h1><p>{escape(exc)}</p><a class='pill' href='/admin'>Back</a></section></main>"), HTTPStatus.BAD_REQUEST)
+
+    def save_home(self):
+        try:
+            form = self.multipart_form()
+            data = load_cms()
+            home = {
+                "text_replacements": text_to_pairs(read_field(form, "text_replacements")),
+                "image_replacements": text_to_pairs(read_field(form, "image_replacements")),
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            }
+            target = read_field(form, "image_target")
+            image = save_upload(form["image"], "image") if "image" in form else ""
+            image_url = drive_image(read_field(form, "image_url"))
+            replacement = image or image_url
+            if target and replacement:
+                home["image_replacements"].append({"from": target, "to": replacement})
+            data["home"] = home
             save_cms(data)
             return self.redirect("/admin")
         except Exception as exc:

@@ -2,7 +2,7 @@
   "version": 2,
   "routes": [
     {
-        "src": "/(login|admin|logout|api/projects|api/reels|admin/projects/delete|admin/projects|admin/reels/delete|admin/reels|work|work/.*|reels)",
+      "src": "/(login|admin|logout|api/projects|api/reels|api/home|admin/home|admin/projects/delete|admin/projects|admin/reels/delete|admin/reels|work|work/.*|reels)",
       "dest": "/api/app.js"
     },
     {

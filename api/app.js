@@ -102,7 +102,9 @@ function validSession(value) {
 }
 
 function seedCms() {
-  return JSON.parse(fs.readFileSync(SEED_FILE, "utf8"));
+  const data = JSON.parse(fs.readFileSync(SEED_FILE, "utf8"));
+  data.home = data.home || { text_replacements: [], image_replacements: [] };
+  return data;
 }
 
 async function blobApi() {
@@ -121,7 +123,9 @@ async function loadCms() {
     return seed;
   }
   const response = await fetch(item.url, { cache: "no-store" });
-  return await response.json();
+  const data = await response.json();
+  data.home = data.home || { text_replacements: [], image_replacements: [] };
+  return data;
 }
 
 async function saveCms(data) {
@@ -142,6 +146,30 @@ function publicProjects(data) {
 
 function publicReels(data) {
   return [...(data.reels || [])].filter((r) => r.published !== false).sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")));
+}
+
+function publicHome(data) {
+  const home = data.home || {};
+  return {
+    text_replacements: Array.isArray(home.text_replacements) ? home.text_replacements : [],
+    image_replacements: Array.isArray(home.image_replacements) ? home.image_replacements : []
+  };
+}
+
+function pairsToText(pairs = []) {
+  return pairs.map((pair) => `${pair.from || ""} => ${pair.to || ""}`).join("\n");
+}
+
+function textToPairs(value = "") {
+  return String(value || "").split(/\r?\n/).map((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+    const index = trimmed.includes("=>") ? trimmed.indexOf("=>") : trimmed.indexOf("|");
+    if (index < 0) return null;
+    const from = trimmed.slice(0, index).trim();
+    const to = trimmed.slice(index + (trimmed.includes("=>") ? 2 : 1)).trim();
+    return from && to ? { from, to } : null;
+  }).filter(Boolean);
 }
 
 function uniqueSlug(data, collection, base, currentId) {
@@ -226,12 +254,16 @@ function reelForm(reel = {}) {
   return `<form method="post" action="/admin/reels" enctype="multipart/form-data"><input type="hidden" name="id" value="${escapeHtml(reel.id || "")}"><div class="row"><label>Title<input name="title" value="${escapeHtml(reel.title || "")}" required></label><label>Slug<input name="slug" value="${escapeHtml(reel.slug || "")}" placeholder="auto from title"></label></div><div class="row"><label>Duration<input name="duration" value="${escapeHtml(reel.duration || "00:15")}"></label><label>Format<input name="format" value="${escapeHtml(reel.format || "9:16 Reel")}"></label></div><label>Caption<textarea name="caption">${escapeHtml(reel.caption || "")}</textarea></label><div class="row"><label>Poster image<input type="file" name="image" accept="image/*"></label><label>Video file<input type="file" name="video" accept="video/*"></label></div><div class="row"><label>Google Drive image URL<input name="image_url" value="${escapeHtml(reel.image || "")}" placeholder="Paste Drive image share link"></label><label>YouTube video URL<input name="video_url" value="${escapeHtml(reel.video || "")}" placeholder="Paste YouTube link"></label></div><label><span><input type="checkbox" name="published" ${checked} style="width:auto"> Published</span></label><input type="submit" value="${reel.id ? "Update reel" : "Create reel"}"></form>`;
 }
 
+function homeForm(home = {}) {
+  return `<form method="post" action="/admin/home" enctype="multipart/form-data"><label>Home text replacements<textarea name="text_replacements" placeholder="Anamorph => Your Brand&#10;Book a call => Start a project">${escapeHtml(pairsToText(home.text_replacements || []))}</textarea></label><label>Home image replacements<textarea name="image_replacements" placeholder="/assets/local/323795fc9c20f1ac.png => https://drive.google.com/file/d/.../view">${escapeHtml(pairsToText(home.image_replacements || []))}</textarea></label><div class="row"><label>Replace this image URL<input name="image_target" placeholder="Paste current home image URL"></label><label>With Google Drive image URL<input name="image_url" placeholder="Paste Drive image share link"></label></div><label>Or upload replacement image<input type="file" name="image" accept="image/*"></label><input type="submit" value="Update home page"></form>`;
+}
+
 function adminPage(data) {
   const items = (data.projects || []).map((p) => `<div class="item"><img src="${escapeHtml(p.image)}" alt=""><div><strong>${escapeHtml(p.title)}</strong><p>/${escapeHtml(p.slug)} - ${escapeHtml(p.year)} - ${p.published === false ? "Draft" : "Published"}</p><a class="pill" href="/work/${escapeHtml(p.slug)}">Preview</a></div><form method="post" action="/admin/projects/delete" onsubmit="return confirm('Delete this project?')"><input type="hidden" name="id" value="${escapeHtml(p.id)}"><button class="danger">Delete</button></form></div>`).join("");
   const edits = (data.projects || []).map((p) => `<details><summary>Edit ${escapeHtml(p.title)}</summary>${projectForm(p)}</details>`).join("");
   const reelItems = (data.reels || []).map((r) => `<div class="item"><img src="${escapeHtml(r.image)}" alt=""><div><strong>${escapeHtml(r.title)}</strong><p>/${escapeHtml(r.slug)} - ${escapeHtml(r.duration)} - ${r.published === false ? "Draft" : "Published"}</p><a class="pill" href="/reels">Preview</a></div><form method="post" action="/admin/reels/delete" onsubmit="return confirm('Delete this reel?')"><input type="hidden" name="id" value="${escapeHtml(r.id)}"><button class="danger">Delete</button></form></div>`).join("");
   const reelEdits = (data.reels || []).map((r) => `<details><summary>Edit ${escapeHtml(r.title)}</summary>${reelForm(r)}</details>`).join("");
-  return shell("Anamorph CMS", `<header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header><main class="wrap admin-grid"><section><div class="eyebrow">(CMS) - Local Content</div><h2>Projects</h2><p>Change project pages, posters, videos, copy, and publish state.</p><div class="list">${items || "<p>No projects yet.</p>"}</div><div style="margin-top:24px">${edits}</div><div class="section-head"><div><div class="eyebrow">(CMS) - Home Reels</div><h2>Homepage Videos</h2></div></div><p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p><div class="list">${reelItems || "<p>No reels yet.</p>"}</div><div style="margin-top:24px">${reelEdits}</div></section><aside class="panel glass"><div class="eyebrow">(Upload) - New Case</div><h2>Project</h2>${projectForm()}<div style="height:30px"></div><div class="eyebrow">(Upload) - Home Reel Video</div><h2>Reel Slot</h2>${reelForm()}</aside></main>`);
+  return shell("Anamorph CMS", `<header class="topbar"><div class="wrap"><a class="brand" href="/">Anamorph</a><nav class="nav"><a class="pill" href="/">Home</a><a class="pill" href="/work">View Work</a><a class="pill" href="/#reels">Home Reels</a><form method="post" action="/logout"><button>Logout</button></form></nav></div></header><main class="wrap admin-grid"><section><div class="eyebrow">(CMS) - Home Page</div><h2>Home Content</h2><p>Change home page text and images while the original Framer design, layout, and animation stay the same.</p><div class="panel">${homeForm(data.home || {})}</div><div class="eyebrow" style="margin-top:28px">(CMS) - Local Content</div><h2>Projects</h2><p>Change project pages, posters, videos, copy, and publish state.</p><div class="list">${items || "<p>No projects yet.</p>"}</div><div style="margin-top:24px">${edits}</div><div class="section-head"><div><div class="eyebrow">(CMS) - Home Reels</div><h2>Homepage Videos</h2></div></div><p>These first three published reels replace only the videos inside the existing home page reels section. The Framer design stays the same.</p><div class="list">${reelItems || "<p>No reels yet.</p>"}</div><div style="margin-top:24px">${reelEdits}</div></section><aside class="panel glass"><div class="eyebrow">(Upload) - New Case</div><h2>Project</h2>${projectForm()}<div style="height:30px"></div><div class="eyebrow">(Upload) - Home Reel Video</div><h2>Reel Slot</h2>${reelForm()}</aside></main>`);
 }
 
 function send(res, status, body, type = "text/html; charset=utf-8") {
@@ -350,6 +382,30 @@ async function saveReel(req, res) {
   }
 }
 
+async function saveHome(req, res) {
+  try {
+    const { fields, files } = await parseForm(req);
+    const data = await loadCms();
+    const home = {
+      text_replacements: textToPairs(first(fields.text_replacements)),
+      image_replacements: textToPairs(first(fields.image_replacements)),
+      updated_at: new Date().toISOString()
+    };
+    const target = first(fields.image_target);
+    const uploaded = await uploadFile(files.image, "image");
+    const imageUrl = driveImage(first(fields.image_url));
+    const replacement = uploaded || imageUrl;
+    if (target && replacement) {
+      home.image_replacements.push({ from: target.trim(), to: replacement });
+    }
+    data.home = home;
+    await saveCms(data);
+    redirect(res, "/admin");
+  } catch (error) {
+    send(res, 400, shell("CMS Error", `<main class="login"><section class="panel glass"><h1>Error</h1><p>${escapeHtml(error.message)}</p><a class="pill" href="/admin">Back</a></section></main>`));
+  }
+}
+
 async function deleteProject(req, res) {
   const { fields } = await parseForm(req);
   const data = await loadCms();
@@ -396,8 +452,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === "GET" && pathname === "/api/projects") return send(res, 200, JSON.stringify({ projects }), "application/json; charset=utf-8");
   if (req.method === "GET" && pathname === "/api/reels") return send(res, 200, JSON.stringify({ reels }), "application/json; charset=utf-8");
+  if (req.method === "GET" && pathname === "/api/home") return send(res, 200, JSON.stringify({ home: publicHome(data) }), "application/json; charset=utf-8");
   if (req.method === "GET" && pathname === "/login") return send(res, 200, loginPage());
   if (req.method === "GET" && pathname === "/admin") return loggedIn ? send(res, 200, adminPage(data)) : redirect(res, "/login");
+  if (req.method === "POST" && pathname === "/admin/home") return loggedIn ? saveHome(req, res) : redirect(res, "/login");
   if (req.method === "POST" && pathname === "/admin/projects") return loggedIn ? saveProject(req, res) : redirect(res, "/login");
   if (req.method === "POST" && pathname === "/admin/projects/delete") return loggedIn ? deleteProject(req, res) : redirect(res, "/login");
   if (req.method === "POST" && pathname === "/admin/reels") return loggedIn ? saveReel(req, res) : redirect(res, "/login");

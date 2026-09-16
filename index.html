@@ -193,6 +193,50 @@
           const id = youtubeId(value);
           return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&loop=1&playlist=${encodeURIComponent(id)}&controls=0&rel=0&playsinline=1` : "";
         };
+        const applyHomeContent = async () => {
+          try {
+            const response = await fetch("/api/home", { cache: "no-store" });
+            if (!response.ok) return;
+            const home = (await response.json()).home || {};
+            const textPairs = home.text_replacements || [];
+            const imagePairs = home.image_replacements || [];
+            if (textPairs.length) {
+              const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+                acceptNode(node) {
+                  const parent = node.parentElement;
+                  if (!parent || ["SCRIPT", "STYLE", "NOSCRIPT"].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+                  return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                }
+              });
+              const nodes = [];
+              while (walker.nextNode()) nodes.push(walker.currentNode);
+              nodes.forEach((node) => {
+                let value = node.nodeValue;
+                textPairs.forEach((pair) => {
+                  if (pair.from && pair.to) value = value.split(pair.from).join(pair.to);
+                });
+                node.nodeValue = value;
+              });
+              document.querySelectorAll("input, textarea").forEach((field) => {
+                textPairs.forEach((pair) => {
+                  if (pair.from && pair.to && field.placeholder) field.placeholder = field.placeholder.split(pair.from).join(pair.to);
+                  if (pair.from && pair.to && field.value) field.value = field.value.split(pair.from).join(pair.to);
+                });
+              });
+            }
+            imagePairs.forEach((pair) => {
+              if (!pair.from || !pair.to) return;
+              document.querySelectorAll("img").forEach((img) => {
+                const src = img.getAttribute("src") || "";
+                const srcset = img.getAttribute("srcset") || "";
+                if ((src && (src.includes(pair.from) || pair.from.includes(src))) || (srcset && srcset.includes(pair.from))) {
+                  img.removeAttribute("srcset");
+                  img.src = pair.to;
+                }
+              });
+            });
+          } catch (_) {}
+        };
         const applyHomeReels = async () => {
           try {
             const response = await fetch("/api/reels", { cache: "no-store" });
@@ -242,8 +286,10 @@
         };
         if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", applyHomeReels, { once: true });
         else applyHomeReels();
-        window.addEventListener("load", applyHomeReels, { once: true });
-        setTimeout(applyHomeReels, 1200);
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", applyHomeContent, { once: true });
+        else applyHomeContent();
+        window.addEventListener("load", () => { applyHomeContent(); applyHomeReels(); }, { once: true });
+        setTimeout(() => { applyHomeContent(); applyHomeReels(); }, 1200);
       })();
     </script>
     

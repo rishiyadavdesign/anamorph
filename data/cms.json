@@ -106,5 +106,9 @@
       "published": true,
       "created_at": "2026-08-26T12:31:00Z"
     }
-  ]
+  ],
+  "home": {
+    "text_replacements": [],
+    "image_replacements": []
+  }
 }
